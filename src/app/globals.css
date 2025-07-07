@@ -1,0 +1,209 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@layer base {
+  :root {
+    /* Brand Colors (INTERREG Compliant) */
+    --brand-eu: #003399;
+    --brand-primary: #3B82F6;
+    --brand-accent: #0EA5E9;
+
+    /* Dark Theme Palette */
+    --dark-bg-primary: #0A0A0B;
+    --dark-bg-secondary: #151518;
+    --dark-bg-tertiary: #1C1C21;
+    --dark-bg-elevated: #26262C;
+    --dark-bg-hover: #2E2E35;
+
+    --dark-border-subtle: #2A2A31;
+    --dark-border-default: #35353D;
+    --dark-border-strong: #404049;
+
+    --dark-text-primary: #FFFFFF;
+    --dark-text-secondary: #A8A8B3;
+    --dark-text-tertiary: #6E6E7A;
+    --dark-text-muted: #4A4A52;
+
+    /* Semantic Colors */
+    --semantic-success: #10B981;
+    --semantic-warning: #F59E0B;
+    --semantic-error: #EF4444;
+    --semantic-info: #3B82F6;
+
+    /* Status Colors */
+    --status-active: #10B981;
+    --status-pending: #F59E0B;
+    --status-blocked: #EF4444;
+    --status-completed: #6366F1;
+  }
+
+  * {
+    @apply border-dark-border-default;
+  }
+
+  html {
+    @apply dark;
+  }
+
+  body {
+    @apply bg-dark-bg-primary text-dark-text-primary font-sans antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* Scrollbar Styling */
+  ::-webkit-scrollbar {
+    @apply w-2;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-dark-bg-secondary;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-dark-border-strong rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-dark-text-muted;
+  }
+}
+
+@layer components {
+  /* Focus States */
+  .focus-ring {
+    @apply outline-none ring-2 ring-brand-primary ring-offset-2 ring-offset-dark-bg-primary;
+  }
+
+  /* Hover Effects */
+  .hover-lift {
+    @apply transition-all duration-200 ease-out;
+  }
+
+  .hover-lift:hover {
+    @apply transform -translate-y-0.5 shadow-lg;
+  }
+
+  /* Active States */
+  .active-scale:active {
+    @apply transform scale-98 transition-transform duration-100;
+  }
+
+  /* Disabled States */
+  .disabled {
+    @apply opacity-50 cursor-not-allowed pointer-events-none;
+  }
+
+  /* Loading Skeleton */
+  .skeleton {
+    @apply bg-gradient-to-r from-dark-bg-tertiary via-dark-border-default to-dark-bg-tertiary bg-[length:200%_100%] animate-shimmer;
+  }
+
+  /* Text Truncation */
+  .line-clamp-1 {
+    @apply overflow-hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+  }
+
+  .line-clamp-2 {
+    @apply overflow-hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  .line-clamp-3 {
+    @apply overflow-hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+  }
+
+  /* Custom Animations */
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-out;
+  }
+
+  .animate-slide-in-left {
+    animation: slideInLeft 0.3s ease-out;
+  }
+
+  .animate-pulse-slow {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+}
+
+@layer utilities {
+  /* Custom Utilities */
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .bg-grid {
+    background-image: 
+      linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+
+  /* Responsive Text Sizes */
+  .text-responsive-xs {
+    @apply text-xs sm:text-sm;
+  }
+
+  .text-responsive-sm {
+    @apply text-sm sm:text-base;
+  }
+
+  .text-responsive-base {
+    @apply text-base sm:text-lg;
+  }
+
+  .text-responsive-lg {
+    @apply text-lg sm:text-xl;
+  }
+
+  .text-responsive-xl {
+    @apply text-xl sm:text-2xl;
+  }
+
+  .text-responsive-2xl {
+    @apply text-2xl sm:text-3xl;
+  }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media (prefers-contrast: high) {
+  :root {
+    --dark-border-default: #4A4A4A;
+    --dark-text-secondary: #E5E5E5;
+  }
+}
+
+/* Print Styles */
+@media print {
+  body {
+    @apply bg-white text-black;
+  }
+  
+  .no-print {
+    @apply hidden;
+  }
+}
+
