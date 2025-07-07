@@ -1,196 +1,170 @@
 "use client";
 
-import * as React from "react";
-import { motion } from "framer-motion";
-import { cn } from "@/lib/utils";
-import { Card } from "@/components/ui/card";
-import { TrendingUp, TrendingDown } from "lucide-react";
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { api } from '@/lib/api';
+import { TaskStatus } from '@/types';
+import { 
+  CheckCircle, 
+  Clock, 
+  AlertTriangle, 
+  FileText,
+  TrendingUp,
+  TrendingDown
+} from 'lucide-react';
 
-interface StatsWidgetProps {
-  title: string;
-  value: number | string;
-  change?: {
-    value: number;
-    type: 'increase' | 'decrease';
-    period?: string;
-  };
-  icon: React.ComponentType<{ className?: string }>;
-  color?: 'primary' | 'success' | 'warning' | 'error' | 'info';
-  loading?: boolean;
-  className?: string;
+interface StatsData {
+  totalTasks: number;
+  completedTasks: number;
+  pendingTasks: number;
+  complianceRate: number;
+  completionTrend: number; // percentage change
 }
 
-const colorConfig = {
-  primary: {
-    iconBg: "bg-brand-primary/10",
-    iconColor: "text-brand-primary",
-    gradient: "from-brand-primary/5 to-transparent"
-  },
-  success: {
-    iconBg: "bg-semantic-success/10",
-    iconColor: "text-semantic-success",
-    gradient: "from-semantic-success/5 to-transparent"
-  },
-  warning: {
-    iconBg: "bg-semantic-warning/10",
-    iconColor: "text-semantic-warning",
-    gradient: "from-semantic-warning/5 to-transparent"
-  },
-  error: {
-    iconBg: "bg-semantic-error/10",
-    iconColor: "text-semantic-error",
-    gradient: "from-semantic-error/5 to-transparent"
-  },
-  info: {
-    iconBg: "bg-semantic-info/10",
-    iconColor: "text-semantic-info",
-    gradient: "from-semantic-info/5 to-transparent"
-  }
-};
+interface StatsWidgetProps {
+  initialData?: StatsData;
+}
 
-export const StatsWidget: React.FC<StatsWidgetProps> = ({
-  title,
-  value,
-  change,
-  icon: Icon,
-  color = 'primary',
-  loading = false,
-  className
-}) => {
-  const config = colorConfig[color];
-
-  if (loading) {
-    return (
-      <Card className={cn("p-6", className)}>
-        <div className="animate-pulse">
-          <div className="flex items-start justify-between mb-4">
-            <div className="w-12 h-12 bg-dark-border-default rounded-lg" />
-            {change && (
-              <div className="w-16 h-4 bg-dark-border-default rounded" />
-            )}
-          </div>
-          <div className="space-y-2">
-            <div className="w-20 h-8 bg-dark-border-default rounded" />
-            <div className="w-32 h-4 bg-dark-border-default rounded" />
-          </div>
-        </div>
-      </Card>
-    );
-  }
-
+export function StatsWidget({ initialData }: StatsWidgetProps) {
+  const [stats, setStats] = useState<StatsData>(initialData || {
+    totalTasks: 0,
+    completedTasks: 0,
+    pendingTasks: 0,
+    complianceRate: 0,
+    completionTrend: 0
+  });
+  const [loading, setLoading] = useState(!initialData);
+  
+  // Fetch stats if not provided
+  useEffect(() => {
+    if (!initialData) {
+      fetchStats();
+    }
+  }, [initialData]);
+  
+  const fetchStats = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch all tasks
+      const allTasks = await api.tasks.getTasks();
+      
+      // Fetch completed tasks
+      const completedTasks = await api.tasks.getTasks({ status: TaskStatus.COMPLETED });
+      
+      // Fetch pending tasks
+      const pendingTasks = await api.tasks.getTasks({ status: TaskStatus.PENDING });
+      
+      // Fetch compliance checks
+      const complianceChecks = await api.compliance.getComplianceChecks();
+      
+      // Calculate compliance rate
+      const compliantChecks = complianceChecks.filter(check => 
+        check.status === 'COMPLIANT'
+      ).length;
+      
+      const complianceRate = complianceChecks.length > 0
+        ? Math.round((compliantChecks / complianceChecks.length) * 100)
+        : 100;
+      
+      // Mock completion trend (in a real app, this would be calculated from historical data)
+      const completionTrend = 12; // +12% for demo
+      
+      setStats({
+        totalTasks: allTasks.length,
+        completedTasks: completedTasks.length,
+        pendingTasks: pendingTasks.length,
+        complianceRate,
+        completionTrend
+      });
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // For demo purposes, if no data is available yet
+  useEffect(() => {
+    if (!initialData && loading) {
+      // Simulate API response with mock data
+      setTimeout(() => {
+        setStats({
+          totalTasks: 37,
+          completedTasks: 24,
+          pendingTasks: 13,
+          complianceRate: 98,
+          completionTrend: 12
+        });
+        setLoading(false);
+      }, 1000);
+    }
+  }, [initialData, loading]);
+  
+  // Stat cards data
+  const statCards = [
+    {
+      title: 'Celkový počet úloh',
+      value: stats.totalTasks,
+      icon: <FileText className="h-5 w-5 text-blue-500" />,
+      description: 'Všetky úlohy v systéme',
+    },
+    {
+      title: 'Dokončené úlohy',
+      value: stats.completedTasks,
+      icon: <CheckCircle className="h-5 w-5 text-green-500" />,
+      trend: stats.completionTrend,
+      trendLabel: 'za posledný mesiac',
+    },
+    {
+      title: 'Čakajúce úlohy',
+      value: stats.pendingTasks,
+      icon: <Clock className="h-5 w-5 text-yellow-500" />,
+      description: 'Úlohy čakajúce na spracovanie',
+    },
+    {
+      title: 'INTERREG Compliance',
+      value: `${stats.complianceRate}%`,
+      icon: <AlertTriangle className="h-5 w-5 text-red-500" />,
+      description: 'Miera súladu s INTERREG pravidlami',
+    },
+  ];
+  
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-    >
-      <Card className={cn("p-6 relative overflow-hidden", className)} hover>
-        {/* Background Gradient */}
-        <div className={cn(
-          "absolute inset-0 bg-gradient-to-br opacity-50",
-          config.gradient
-        )} />
-        
-        {/* Content */}
-        <div className="relative">
-          {/* Header */}
-          <div className="flex items-start justify-between mb-4">
-            <div className={cn(
-              "w-12 h-12 rounded-lg flex items-center justify-center",
-              config.iconBg
-            )}>
-              <Icon className={cn("w-5 h-5", config.iconColor)} />
-            </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {statCards.map((stat, index) => (
+        <Card key={index}>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              {stat.title}
+            </CardTitle>
+            {stat.icon}
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stat.value}</div>
             
-            {change && (
-              <div className={cn(
-                "flex items-center gap-1 text-sm font-medium",
-                change.type === 'increase' 
-                  ? "text-semantic-success" 
-                  : "text-semantic-error"
-              )}>
-                {change.type === 'increase' ? (
-                  <TrendingUp className="w-4 h-4" />
+            {stat.trend !== undefined && (
+              <div className="flex items-center mt-1">
+                {stat.trend >= 0 ? (
+                  <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
                 ) : (
-                  <TrendingDown className="w-4 h-4" />
+                  <TrendingDown className="h-4 w-4 text-red-500 mr-1" />
                 )}
-                <span>{change.value > 0 ? '+' : ''}{change.value}%</span>
+                <p className={`text-xs ${stat.trend >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                  {stat.trend >= 0 ? '+' : ''}{stat.trend}% {stat.trendLabel}
+                </p>
               </div>
             )}
-          </div>
-
-          {/* Value and Title */}
-          <div className="space-y-1">
-            <motion.p 
-              className="text-3xl font-bold text-dark-text-primary"
-              initial={{ scale: 0.8 }}
-              animate={{ scale: 1 }}
-              transition={{ duration: 0.3, delay: 0.1 }}
-            >
-              {typeof value === 'number' ? value.toLocaleString() : value}
-            </motion.p>
-            <p className="text-sm text-dark-text-secondary font-medium">
-              {title}
-            </p>
-          </div>
-
-          {/* Change Period */}
-          {change?.period && (
-            <p className="text-xs text-dark-text-muted mt-2">
-              {change.period}
-            </p>
-          )}
-        </div>
-
-        {/* Hover Effect */}
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300 transform -skew-x-12" />
-      </Card>
-    </motion.div>
+            
+            {stat.description && (
+              <p className="text-xs text-muted-foreground mt-1">
+                {stat.description}
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      ))}
+    </div>
   );
-};
-
-// Specialized Stats Widgets
-export const TaskStatsWidget: React.FC<Omit<StatsWidgetProps, 'icon'>> = (props) => (
-  <StatsWidget 
-    {...props} 
-    icon={({ className }) => (
-      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-      </svg>
-    )}
-  />
-);
-
-export const CompletedStatsWidget: React.FC<Omit<StatsWidgetProps, 'icon'>> = (props) => (
-  <StatsWidget 
-    {...props} 
-    icon={({ className }) => (
-      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-      </svg>
-    )}
-  />
-);
-
-export const PendingStatsWidget: React.FC<Omit<StatsWidgetProps, 'icon'>> = (props) => (
-  <StatsWidget 
-    {...props} 
-    icon={({ className }) => (
-      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    )}
-  />
-);
-
-export const ComplianceStatsWidget: React.FC<Omit<StatsWidgetProps, 'icon'>> = (props) => (
-  <StatsWidget 
-    {...props} 
-    icon={({ className }) => (
-      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    )}
-  />
-);
+}
 

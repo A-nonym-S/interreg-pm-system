@@ -1,256 +1,153 @@
 "use client";
 
-import * as React from "react";
-import { motion } from "framer-motion";
-import { cn } from "@/lib/utils";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { CustomAvatar } from "@/components/ui/avatar";
-import { formatDate, formatRelativeTime } from "@/lib/utils";
+import { useState } from 'react';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Avatar } from '@/components/ui/avatar';
+import { Task, TaskStatus, Priority, TaskCategory } from '@/types';
+import { format } from 'date-fns';
+import { sk } from 'date-fns/locale';
 import { 
-  Clock, 
-  ArrowRight, 
-  XCircle, 
   CheckCircle, 
-  Calendar,
-  User,
-  AlertTriangle,
-  MoreHorizontal
-} from "lucide-react";
-import type { Task, TaskStatus, Priority, TaskCategory } from "@/types";
+  Clock, 
+  AlertTriangle, 
+  X, 
+  Calendar, 
+  User
+} from 'lucide-react';
+
+// Status icon mapping
+const statusIcons = {
+  [TaskStatus.PENDING]: <Clock className="h-5 w-5 text-yellow-500" />,
+  [TaskStatus.IN_PROGRESS]: <AlertTriangle className="h-5 w-5 text-blue-500" />,
+  [TaskStatus.COMPLETED]: <CheckCircle className="h-5 w-5 text-green-500" />,
+  [TaskStatus.BLOCKED]: <X className="h-5 w-5 text-red-500" />,
+  [TaskStatus.CANCELLED]: <X className="h-5 w-5 text-gray-500" />,
+};
+
+// Priority color mapping
+const priorityColors = {
+  [Priority.LOW]: 'bg-green-500/10 text-green-500 border-green-500/20',
+  [Priority.MEDIUM]: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
+  [Priority.HIGH]: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20',
+  [Priority.CRITICAL]: 'bg-red-500/10 text-red-500 border-red-500/20',
+};
+
+// Category color mapping
+const categoryColors = {
+  [TaskCategory.PUBLICITA]: 'bg-purple-500/10 text-purple-500 border-purple-500/20',
+  [TaskCategory.FINANCIE]: 'bg-green-500/10 text-green-500 border-green-500/20',
+  [TaskCategory.REPORTING]: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
+  [TaskCategory.COMPLIANCE]: 'bg-red-500/10 text-red-500 border-red-500/20',
+  [TaskCategory.MONITORING]: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20',
+  [TaskCategory.OBSTARAVANIE]: 'bg-orange-500/10 text-orange-500 border-orange-500/20',
+  [TaskCategory.PARTNERSTVO]: 'bg-indigo-500/10 text-indigo-500 border-indigo-500/20',
+  [TaskCategory.GENERAL]: 'bg-gray-500/10 text-gray-500 border-gray-500/20',
+};
 
 interface TaskCardProps {
-  task: Partial<Task> & {
-    id: string;
-    title: string;
-    status: TaskStatus;
-    priority: Priority;
-    category: TaskCategory;
-  };
-  onSelect?: (task: TaskCardProps['task']) => void;
-  selected?: boolean;
-  showProgress?: boolean;
-  compact?: boolean;
+  task: Task;
+  onClick?: (task: Task) => void;
 }
 
-const priorityConfig = {
-  CRITICAL: {
-    variant: "critical" as const,
-    label: "Kritická",
-    color: "text-red-500 bg-red-500/10 border-red-500/20"
-  },
-  HIGH: {
-    variant: "high" as const,
-    label: "Vysoká",
-    color: "text-orange-500 bg-orange-500/10 border-orange-500/20"
-  },
-  MEDIUM: {
-    variant: "medium" as const,
-    label: "Stredná",
-    color: "text-blue-500 bg-blue-500/10 border-blue-500/20"
-  },
-  LOW: {
-    variant: "low" as const,
-    label: "Nízka",
-    color: "text-gray-500 bg-gray-500/10 border-gray-500/20"
-  }
-};
-
-const statusConfig = {
-  PENDING: {
-    icon: Clock,
-    label: "Čaká",
-    variant: "pending" as const,
-    color: "text-semantic-warning"
-  },
-  IN_PROGRESS: {
-    icon: ArrowRight,
-    label: "Prebieha",
-    variant: "in-progress" as const,
-    color: "text-blue-500"
-  },
-  BLOCKED: {
-    icon: XCircle,
-    label: "Blokovaná",
-    variant: "blocked" as const,
-    color: "text-semantic-error"
-  },
-  COMPLETED: {
-    icon: CheckCircle,
-    label: "Dokončená",
-    variant: "completed" as const,
-    color: "text-semantic-success"
-  },
-  CANCELLED: {
-    icon: XCircle,
-    label: "Zrušená",
-    variant: "cancelled" as const,
-    color: "text-gray-500"
-  }
-};
-
-const categoryConfig = {
-  PUBLICITA: { label: "Publicita", variant: "publicita" as const },
-  FINANCIE: { label: "Financie", variant: "financie" as const },
-  REPORTING: { label: "Reporting", variant: "reporting" as const },
-  COMPLIANCE: { label: "Compliance", variant: "compliance" as const },
-  MONITORING: { label: "Monitoring", variant: "monitoring" as const },
-  OBSTARAVANIE: { label: "Obstarávanie", variant: "obstaravanie" as const },
-  PARTNERSTVO: { label: "Partnerstvo", variant: "partnerstvo" as const },
-  GENERAL: { label: "Všeobecné", variant: "general" as const }
-};
-
-export const TaskCard: React.FC<TaskCardProps> = ({ 
-  task, 
-  onSelect, 
-  selected = false,
-  showProgress = true,
-  compact = false
-}) => {
-  const StatusIcon = statusConfig[task.status].icon;
-  const priorityInfo = priorityConfig[task.priority];
-  const statusInfo = statusConfig[task.status];
-  const categoryInfo = categoryConfig[task.category];
-
-  // Mock data for demonstration
-  const mockAssignee = task.assigneeId ? {
-    id: task.assigneeId,
-    name: "Mária Novák",
-    avatar: undefined
-  } : undefined;
-
-  const mockProgress = task.status === 'COMPLETED' ? 100 : 
-                      task.status === 'IN_PROGRESS' ? 65 : 
-                      task.status === 'BLOCKED' ? 30 : 0;
-
-  const mockSubtasks = task.status !== 'PENDING' ? {
-    total: 5,
-    completed: task.status === 'COMPLETED' ? 5 : 
-               task.status === 'IN_PROGRESS' ? 3 : 
-               task.status === 'BLOCKED' ? 1 : 0
-  } : undefined;
-
+export function TaskCard({ task, onClick }: TaskCardProps) {
+  const handleClick = () => {
+    if (onClick) {
+      onClick(task);
+    }
+  };
+  
+  // Format deadline date if exists
+  const formattedDeadline = task.deadline 
+    ? format(new Date(task.deadline), 'dd. MM. yyyy', { locale: sk })
+    : null;
+  
   return (
-    <motion.div
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
-      onClick={() => onSelect?.(task)}
-      className="cursor-pointer"
+    <Card 
+      className="hover:border-primary/50 transition-all cursor-pointer"
+      onClick={handleClick}
     >
-      <Card
-        className={cn(
-          "p-5 hover:bg-dark-bg-elevated hover:border-dark-border-strong transition-all duration-200",
-          selected && "ring-2 ring-brand-primary ring-offset-2 ring-offset-dark-bg-primary",
-          compact && "p-4"
-        )}
-        hover
-        interactive
-      >
-        {/* Header */}
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex items-center gap-3 flex-1 min-w-0">
-            <Badge variant={priorityInfo.variant} size="sm">
-              {priorityInfo.label}
+      <CardContent className="p-4">
+        <div className="flex flex-col space-y-3">
+          {/* Task header with ID and category */}
+          <div className="flex justify-between items-start">
+            <div className="flex items-center space-x-2">
+              <Badge variant="outline" className="text-xs font-mono">
+                {task.externalId || `TASK-${task.id.substring(0, 8)}`}
+              </Badge>
+              <Badge className={`${categoryColors[task.category]}`}>
+                {task.category}
+              </Badge>
+            </div>
+            <Badge className={`${priorityColors[task.priority]}`}>
+              {task.priority}
             </Badge>
-            <Badge variant={categoryInfo.variant} size="sm">
-              {categoryInfo.label}
-            </Badge>
-            {task.externalId && (
-              <span className="text-xs text-dark-text-tertiary font-mono">
-                {task.externalId}
-              </span>
-            )}
           </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <StatusIcon className={cn("w-5 h-5", statusInfo.color)} />
-            <button className="p-1 hover:bg-dark-bg-hover rounded">
-              <MoreHorizontal className="w-4 h-4 text-dark-text-muted" />
-            </button>
-          </div>
-        </div>
-
-        {/* Content */}
-        <div className="space-y-3">
-          <h3 className="font-semibold text-dark-text-primary leading-tight">
-            {task.title}
-          </h3>
           
-          {task.description && !compact && (
-            <p className="text-sm text-dark-text-secondary line-clamp-2">
+          {/* Task title */}
+          <h3 className="text-xl font-semibold">{task.title}</h3>
+          
+          {/* Task description (truncated) */}
+          {task.description && (
+            <p className="text-muted-foreground line-clamp-2">
               {task.description}
             </p>
           )}
-
-          {/* Progress */}
-          {showProgress && mockSubtasks && (
-            <div className="space-y-2">
-              <div className="flex justify-between text-xs">
-                <span className="text-dark-text-secondary">
-                  Podúlohy: {mockSubtasks.completed}/{mockSubtasks.total}
-                </span>
-                <span className="text-dark-text-primary font-medium">
-                  {Math.round((mockSubtasks.completed / mockSubtasks.total) * 100)}%
-                </span>
-              </div>
-              <Progress 
-                value={mockSubtasks.completed} 
-                max={mockSubtasks.total}
-                size="sm"
-                variant={task.status === 'COMPLETED' ? 'success' : 
-                        task.status === 'BLOCKED' ? 'error' : 'default'}
-              />
+          
+          {/* Progress bar */}
+          <div className="space-y-1">
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>Podielohy: {task.progress}%</span>
+              {task.estimatedHours && (
+                <span>{task.actualHours || 0}/{task.estimatedHours} hodín</span>
+              )}
             </div>
+            <Progress value={task.progress} className="h-1" />
+          </div>
+        </div>
+      </CardContent>
+      
+      <CardFooter className="p-4 pt-0 flex justify-between items-center">
+        {/* Assignee */}
+        <div className="flex items-center space-x-2">
+          {task.assignee ? (
+            <>
+              <Avatar className="h-6 w-6">
+                {task.assignee.avatar ? (
+                  <img src={task.assignee.avatar} alt={task.assignee.name} />
+                ) : (
+                  <div className="bg-primary/10 text-primary flex items-center justify-center h-full w-full text-xs">
+                    {task.assignee.name.substring(0, 2).toUpperCase()}
+                  </div>
+                )}
+              </Avatar>
+              <span className="text-sm text-muted-foreground">
+                {task.assignee.name}
+              </span>
+            </>
+          ) : (
+            <span className="text-sm text-muted-foreground flex items-center">
+              <User className="h-4 w-4 mr-1" />
+              Nepriradené
+            </span>
           )}
         </div>
-
-        {/* Footer */}
-        <div className="flex items-center justify-between mt-4 pt-3 border-t border-dark-border-subtle">
-          <div className="flex items-center gap-4">
-            {mockAssignee && (
-              <div className="flex items-center gap-2">
-                <CustomAvatar 
-                  src={mockAssignee.avatar} 
-                  name={mockAssignee.name}
-                  size="sm"
-                />
-                {!compact && (
-                  <span className="text-xs text-dark-text-tertiary">
-                    {mockAssignee.name}
-                  </span>
-                )}
-              </div>
-            )}
-            
-            {!mockAssignee && (
-              <div className="flex items-center gap-2 text-dark-text-muted">
-                <User className="w-4 h-4" />
-                {!compact && (
-                  <span className="text-xs">Nepriradené</span>
-                )}
-              </div>
-            )}
-          </div>
-
-          {task.deadline && (
-            <div className="flex items-center gap-1 text-xs text-dark-text-tertiary">
-              <Calendar className="w-3 h-3" />
-              <span>{formatDate(new Date(task.deadline), 'short')}</span>
-            </div>
+        
+        {/* Deadline and status */}
+        <div className="flex items-center space-x-3">
+          {formattedDeadline && (
+            <span className="text-sm text-muted-foreground flex items-center">
+              <Calendar className="h-4 w-4 mr-1" />
+              {formattedDeadline}
+            </span>
           )}
+          
+          {/* Status icon */}
+          {statusIcons[task.status]}
         </div>
-
-        {/* Urgency Indicator */}
-        {task.priority === 'CRITICAL' && task.status !== 'COMPLETED' && (
-          <div className="mt-3 pt-3 border-t border-dark-border-subtle">
-            <div className="flex items-center gap-2 text-semantic-error">
-              <AlertTriangle className="w-4 h-4" />
-              <span className="text-xs font-medium">Vyžaduje okamžitú pozornosť</span>
-            </div>
-          </div>
-        )}
-      </Card>
-    </motion.div>
+      </CardFooter>
+    </Card>
   );
-};
+}
 

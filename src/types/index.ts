@@ -1,16 +1,9 @@
 // User Types
 export enum UserRole {
   ADMIN = 'ADMIN',
-  MANAGER = 'MANAGER',
+  PROJECT_MANAGER = 'PROJECT_MANAGER',
   USER = 'USER',
-  VIEWER = 'VIEWER'
-}
-
-export enum Language {
-  SK = 'SK',
-  EN = 'EN',
-  HU = 'HU',
-  UK = 'UK'
+  VIEWER = 'VIEWER',
 }
 
 export interface User {
@@ -18,14 +11,29 @@ export interface User {
   email: string;
   name: string;
   role: UserRole;
-  language: Language;
-  notifications: boolean;
   avatar?: string;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt?: string;
+  assignedTasks?: Task[];
+  activities?: Activity[];
 }
 
 // Task Types
+export enum TaskStatus {
+  PENDING = 'PENDING',
+  IN_PROGRESS = 'IN_PROGRESS',
+  BLOCKED = 'BLOCKED',
+  COMPLETED = 'COMPLETED',
+  CANCELLED = 'CANCELLED',
+}
+
+export enum Priority {
+  LOW = 'LOW',
+  MEDIUM = 'MEDIUM',
+  HIGH = 'HIGH',
+  CRITICAL = 'CRITICAL',
+}
+
 export enum TaskCategory {
   PUBLICITA = 'PUBLICITA',
   FINANCIE = 'FINANCIE',
@@ -34,59 +42,33 @@ export enum TaskCategory {
   MONITORING = 'MONITORING',
   OBSTARAVANIE = 'OBSTARAVANIE',
   PARTNERSTVO = 'PARTNERSTVO',
-  GENERAL = 'GENERAL'
-}
-
-export enum Priority {
-  CRITICAL = 'CRITICAL',
-  HIGH = 'HIGH',
-  MEDIUM = 'MEDIUM',
-  LOW = 'LOW'
-}
-
-export enum TaskStatus {
-  PENDING = 'PENDING',
-  IN_PROGRESS = 'IN_PROGRESS',
-  BLOCKED = 'BLOCKED',
-  COMPLETED = 'COMPLETED',
-  CANCELLED = 'CANCELLED'
-}
-
-export enum Recurrence {
-  ONCE = 'ONCE',
-  DAILY = 'DAILY',
-  WEEKLY = 'WEEKLY',
-  MONTHLY = 'MONTHLY',
-  QUARTERLY = 'QUARTERLY',
-  YEARLY = 'YEARLY',
-  AS_NEEDED = 'AS_NEEDED'
+  GENERAL = 'GENERAL',
 }
 
 export interface Task {
   id: string;
-  externalId: string;
+  externalId?: string;
   title: string;
   description?: string;
-  category: TaskCategory;
-  priority: Priority;
   status: TaskStatus;
-  recurrence: Recurrence;
-  deadline?: Date;
+  priority: Priority;
+  category: TaskCategory;
+  createdAt: string;
+  updatedAt: string;
+  deadline?: string;
+  startDate?: string;
   assigneeId?: string;
   assignee?: User;
-  creatorId: string;
-  creator?: User;
-  metadata?: Record<string, any>;
-  complianceData?: Record<string, any>;
-  createdAt: Date;
-  updatedAt: Date;
-  completedAt?: Date;
+  parentId?: string;
+  parent?: Task;
   subtasks?: Task[];
-  parentTaskId?: string;
-  parentTask?: Task;
+  progress: number;
+  estimatedHours?: number;
+  actualHours?: number;
   activities?: Activity[];
-  documents?: Document[];
   comments?: Comment[];
+  documents?: Document[];
+  compliance?: ComplianceCheck[];
 }
 
 // Activity Types
@@ -94,10 +76,11 @@ export enum ActivityType {
   TASK_CREATED = 'TASK_CREATED',
   TASK_UPDATED = 'TASK_UPDATED',
   TASK_COMPLETED = 'TASK_COMPLETED',
+  TASK_ASSIGNED = 'TASK_ASSIGNED',
   COMMENT_ADDED = 'COMMENT_ADDED',
   DOCUMENT_UPLOADED = 'DOCUMENT_UPLOADED',
+  COMPLIANCE_CHECK = 'COMPLIANCE_CHECK',
   STATUS_CHANGED = 'STATUS_CHANGED',
-  ASSIGNEE_CHANGED = 'ASSIGNEE_CHANGED'
 }
 
 export interface Activity {
@@ -105,26 +88,48 @@ export interface Activity {
   type: ActivityType;
   description: string;
   metadata?: Record<string, any>;
+  createdAt: string;
   userId: string;
   user?: User;
   taskId?: string;
   task?: Task;
-  createdAt: Date;
+}
+
+// Comment Types
+export interface Comment {
+  id: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+  userId: string;
+  user?: User;
+  taskId: string;
+  task?: Task;
 }
 
 // Document Types
+export enum DocumentCategory {
+  REPORT = 'REPORT',
+  CONTRACT = 'CONTRACT',
+  INVOICE = 'INVOICE',
+  PRESENTATION = 'PRESENTATION',
+  IMAGE = 'IMAGE',
+  OTHER = 'OTHER',
+}
+
 export interface Document {
   id: string;
-  filename: string;
+  name: string;
+  description?: string;
+  fileName: string;
+  filePath: string;
+  fileSize: number;
   mimeType: string;
-  size: number;
-  url: string;
-  taskId: string;
+  category: DocumentCategory;
+  createdAt: string;
+  updatedAt: string;
+  taskId?: string;
   task?: Task;
-  uploadedBy: string;
-  createdAt: Date;
-  extractedText?: string;
-  aiProcessed: boolean;
 }
 
 // Compliance Types
@@ -133,102 +138,36 @@ export enum ComplianceCategory {
   SANCTIONS_CHECK = 'SANCTIONS_CHECK',
   GDPR = 'GDPR',
   REPORTING = 'REPORTING',
-  FINANCIAL = 'FINANCIAL'
+  FINANCIAL = 'FINANCIAL',
 }
 
 export enum ComplianceStatus {
   COMPLIANT = 'COMPLIANT',
   NON_COMPLIANT = 'NON_COMPLIANT',
   PENDING_REVIEW = 'PENDING_REVIEW',
-  NEEDS_ACTION = 'NEEDS_ACTION'
+  NEEDS_ACTION = 'NEEDS_ACTION',
 }
 
-export interface ComplianceLog {
+export interface ComplianceCheck {
   id: string;
-  action: string;
   category: ComplianceCategory;
   status: ComplianceStatus;
-  details: Record<string, any>;
-  performedBy: string;
-  performedAt: Date;
-  nextCheckDate?: Date;
-}
-
-// AI Types
-export interface TaskClassification {
-  category: TaskCategory;
-  priority: Priority;
-  confidence: number;
-  suggestedAgent: string;
-  keywords: string[];
-  complianceFlags: string[];
-}
-
-export interface ExtractedTask {
-  title: string;
   description?: string;
-  category: TaskCategory;
-  priority: Priority;
-  deadline?: Date;
-  assignee?: string;
-  recurrence: Recurrence;
-}
-
-// Agent Types
-export interface AgentResponse {
-  status: 'processed' | 'blocked' | 'pending';
-  reason?: string;
-  actions?: AgentAction[];
-  suggestedActions?: string[];
-  nextSteps?: string[];
-}
-
-export interface AgentAction {
-  type: string;
-  platform?: string;
-  scheduledFor?: Date;
-  content?: string;
-  metadata?: Record<string, any>;
-}
-
-// Notification Types
-export interface Notification {
-  id: string;
-  type: 'success' | 'warning' | 'error' | 'info';
-  title: string;
-  message: string;
-  timestamp: Date;
-  userId: string;
-  read: boolean;
-  actions?: NotificationAction[];
-}
-
-export interface NotificationAction {
-  label: string;
-  action: string;
-  url?: string;
-}
-
-// Dashboard Types
-export interface DashboardStats {
-  totalTasks: number;
-  completedTasks: number;
-  pendingTasks: number;
-  blockedTasks: number;
-  overdueTasks: number;
-  complianceRate: number;
-  recentActivities: Activity[];
-}
-
-// Comment Types
-export interface Comment {
-  id: string;
-  content: string;
-  taskId: string;
+  details?: Record<string, any>;
+  nextCheck?: string;
+  lastCheck?: string;
+  createdAt: string;
+  updatedAt: string;
+  taskId?: string;
   task?: Task;
-  authorId: string;
-  author?: User;
-  createdAt: Date;
-  updatedAt: Date;
+}
+
+// Project Settings
+export interface ProjectSettings {
+  id: string;
+  key: string;
+  value: Record<string, any>;
+  createdAt: string;
+  updatedAt: string;
 }
 
