@@ -1,268 +1,94 @@
 "use client";
 
-import * as React from "react";
-import { cn } from "@/lib/utils";
-import { formatDate } from "@/lib/utils";
+import { Card, CardContent } from '@/components/ui/card';
+import { ComplianceCategory, ComplianceStatus } from '@/types';
 import { 
   CheckCircle, 
-  XCircle, 
+  AlertTriangle, 
   Clock, 
-  AlertCircle,
-  Shield,
-  Eye,
+  XCircle,
   FileText,
-  CreditCard,
-  Users
-} from "lucide-react";
-import type { ComplianceStatus, ComplianceCategory } from "@/types";
+  Shield,
+  Database,
+  BarChart
+} from 'lucide-react';
+
+// Status icon mapping
+const statusIcons = {
+  [ComplianceStatus.COMPLIANT]: <CheckCircle className="h-6 w-6 text-green-500" />,
+  [ComplianceStatus.NON_COMPLIANT]: <XCircle className="h-6 w-6 text-red-500" />,
+  [ComplianceStatus.PENDING_REVIEW]: <Clock className="h-6 w-6 text-yellow-500" />,
+  [ComplianceStatus.NEEDS_ACTION]: <AlertTriangle className="h-6 w-6 text-orange-500" />,
+};
+
+// Status text mapping
+const statusText = {
+  [ComplianceStatus.COMPLIANT]: 'Vyhovuje',
+  [ComplianceStatus.NON_COMPLIANT]: 'Nevyhovuje',
+  [ComplianceStatus.PENDING_REVIEW]: 'Čaká na kontrolu',
+  [ComplianceStatus.NEEDS_ACTION]: 'Vyžaduje akciu',
+};
+
+// Category icon mapping
+const categoryIcons = {
+  [ComplianceCategory.VISUAL_IDENTITY]: <FileText className="h-6 w-6 text-purple-500" />,
+  [ComplianceCategory.SANCTIONS_CHECK]: <Shield className="h-6 w-6 text-red-500" />,
+  [ComplianceCategory.GDPR]: <Database className="h-6 w-6 text-blue-500" />,
+  [ComplianceCategory.REPORTING]: <BarChart className="h-6 w-6 text-green-500" />,
+  [ComplianceCategory.FINANCIAL]: <BarChart className="h-6 w-6 text-yellow-500" />,
+};
+
+// Status color mapping
+const statusColors = {
+  [ComplianceStatus.COMPLIANT]: 'bg-green-500/10 border-green-500/20',
+  [ComplianceStatus.NON_COMPLIANT]: 'bg-red-500/10 border-red-500/20',
+  [ComplianceStatus.PENDING_REVIEW]: 'bg-yellow-500/10 border-yellow-500/20',
+  [ComplianceStatus.NEEDS_ACTION]: 'bg-orange-500/10 border-orange-500/20',
+};
 
 interface ComplianceBadgeProps {
-  status: ComplianceStatus;
   category: ComplianceCategory;
-  nextCheck?: Date;
-  lastCheck?: Date;
-  details?: string;
-  className?: string;
-  size?: "sm" | "md" | "lg";
-  showDetails?: boolean;
+  status: ComplianceStatus;
+  title?: string;
+  description?: string;
+  onClick?: () => void;
 }
 
-const statusConfig = {
-  COMPLIANT: {
-    icon: CheckCircle,
-    color: "text-semantic-success bg-semantic-success/10 border-semantic-success/20",
-    label: "Vyhovuje",
-    bgColor: "bg-semantic-success/5"
-  },
-  NON_COMPLIANT: {
-    icon: XCircle,
-    color: "text-semantic-error bg-semantic-error/10 border-semantic-error/20",
-    label: "Nevyhovuje",
-    bgColor: "bg-semantic-error/5"
-  },
-  PENDING_REVIEW: {
-    icon: Clock,
-    color: "text-semantic-warning bg-semantic-warning/10 border-semantic-warning/20",
-    label: "Čaká na kontrolu",
-    bgColor: "bg-semantic-warning/5"
-  },
-  NEEDS_ACTION: {
-    icon: AlertCircle,
-    color: "text-semantic-error bg-semantic-error/10 border-semantic-error/20",
-    label: "Vyžaduje akciu",
-    bgColor: "bg-semantic-error/5"
-  }
-};
-
-const categoryConfig = {
-  VISUAL_IDENTITY: {
-    icon: Eye,
-    label: "Vizuálna identita",
-    description: "EU a INTERREG logá, farby, fonty"
-  },
-  SANCTIONS_CHECK: {
-    icon: Shield,
-    label: "Sankčné zoznamy",
-    description: "Kontrola partnerov voči sankčným zoznamom"
-  },
-  GDPR: {
-    icon: Users,
-    label: "GDPR",
-    description: "Ochrana osobných údajov"
-  },
-  REPORTING: {
-    icon: FileText,
-    label: "Reportovanie",
-    description: "PPR a INTERREG+ reporty"
-  },
-  FINANCIAL: {
-    icon: CreditCard,
-    label: "Finančné",
-    description: "Finančné pravidlá a kontroly"
-  }
-};
-
-const sizeConfig = {
-  sm: {
-    container: "px-2 py-1 text-xs",
-    icon: "w-3 h-3",
-    spacing: "gap-1"
-  },
-  md: {
-    container: "px-3 py-1.5 text-sm",
-    icon: "w-4 h-4",
-    spacing: "gap-2"
-  },
-  lg: {
-    container: "px-4 py-2 text-base",
-    icon: "w-5 h-5",
-    spacing: "gap-3"
-  }
-};
-
-export const ComplianceBadge: React.FC<ComplianceBadgeProps> = ({
-  status,
-  category,
-  nextCheck,
-  lastCheck,
-  details,
-  className,
-  size = "md",
-  showDetails = false
-}) => {
-  const statusInfo = statusConfig[status];
-  const categoryInfo = categoryConfig[category];
-  const sizeInfo = sizeConfig[size];
-  
-  const StatusIcon = statusInfo.icon;
-  const CategoryIcon = categoryInfo.icon;
-
-  if (showDetails) {
-    return (
-      <div className={cn(
-        "rounded-lg border border-dark-border-default p-4 space-y-3",
-        statusInfo.bgColor,
-        className
-      )}>
-        {/* Header */}
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-3">
-            <div className={cn(
-              "p-2 rounded-lg",
-              statusInfo.color
-            )}>
-              <CategoryIcon className="w-4 h-4" />
-            </div>
-            <div>
-              <h4 className="font-medium text-dark-text-primary">
-                {categoryInfo.label}
-              </h4>
-              <p className="text-xs text-dark-text-muted">
-                {categoryInfo.description}
-              </p>
-            </div>
+export function ComplianceBadge({ 
+  category, 
+  status, 
+  title, 
+  description,
+  onClick
+}: ComplianceBadgeProps) {
+  return (
+    <Card 
+      className={`${statusColors[status]} hover:border-primary/50 transition-all ${onClick ? 'cursor-pointer' : ''}`}
+      onClick={onClick}
+    >
+      <CardContent className="p-4">
+        <div className="flex items-start gap-4">
+          {/* Icon */}
+          <div className="mt-1">
+            {categoryIcons[category] || <FileText className="h-6 w-6 text-muted-foreground" />}
           </div>
           
-          <div className={cn(
-            "flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium",
-            statusInfo.color
-          )}>
-            <StatusIcon className="w-3 h-3" />
-            <span>{statusInfo.label}</span>
-          </div>
-        </div>
-
-        {/* Details */}
-        {details && (
-          <p className="text-sm text-dark-text-secondary">
-            {details}
-          </p>
-        )}
-
-        {/* Dates */}
-        <div className="flex items-center justify-between text-xs text-dark-text-muted">
-          {lastCheck && (
-            <span>
-              Posledná kontrola: {formatDate(lastCheck, 'short')}
-            </span>
-          )}
-          {nextCheck && (
-            <span>
-              Ďalšia kontrola: {formatDate(nextCheck, 'short')}
-            </span>
-          )}
-        </div>
-
-        {/* EU Badge */}
-        <div className="flex items-center justify-between pt-2 border-t border-dark-border-subtle">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-4 bg-brand-eu rounded flex items-center justify-center">
-              <span className="text-white font-bold text-xs">EU</span>
-            </div>
-            <span className="text-xs font-medium text-dark-text-primary">
-              INTERREG Compliance
-            </span>
+          {/* Content */}
+          <div className="flex-1 space-y-1">
+            <h3 className="font-medium">{title || category}</h3>
+            {description && (
+              <p className="text-sm text-muted-foreground">{description}</p>
+            )}
           </div>
           
-          {status === 'COMPLIANT' && (
-            <div className="flex items-center gap-1 text-semantic-success">
-              <CheckCircle className="w-3 h-3" />
-              <span className="text-xs font-medium">Certifikované</span>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className={cn(
-      "inline-flex items-center rounded-lg border",
-      sizeInfo.container,
-      sizeInfo.spacing,
-      statusInfo.color,
-      className
-    )}>
-      <div className={cn(
-        "p-1 rounded-md",
-        statusInfo.color
-      )}>
-        <CategoryIcon className={sizeInfo.icon} />
-      </div>
-      
-      <div className="flex flex-col min-w-0">
-        <span className="font-medium truncate">
-          {categoryInfo.label}
-        </span>
-        <span className="text-xs opacity-75 truncate">
-          {statusInfo.label}
-        </span>
-      </div>
-      
-      {nextCheck && size !== 'sm' && (
-        <div className="ml-2 pl-2 border-l border-current/20">
-          <span className="text-xs opacity-75 whitespace-nowrap">
-            {formatDate(nextCheck, 'short')}
-          </span>
-        </div>
-      )}
-    </div>
-  );
-};
-
-// EU Identity Footer Component
-export const EUIdentityFooter: React.FC<{ className?: string }> = ({ className }) => {
-  return (
-    <footer className={cn(
-      "py-6 px-8 bg-dark-bg-secondary border-t border-dark-border-subtle",
-      className
-    )}>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-6">
-          {/* EU Logos */}
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-6 bg-brand-eu rounded flex items-center justify-center">
-              <span className="text-white font-bold text-xs">EU</span>
-            </div>
-            <div className="h-8 w-px bg-dark-border-default" />
-            <span className="text-sm font-medium text-dark-text-primary">INTERREG</span>
-          </div>
-
-          {/* Disclaimer */}
-          <div className="text-xs text-dark-text-tertiary">
-            <p>Financované Európskou úniou</p>
-            <p>HUSKROUA/2301/4.1/0045</p>
+          {/* Status */}
+          <div className="flex flex-col items-center gap-1">
+            {statusIcons[status]}
+            <span className="text-xs font-medium">{statusText[status]}</span>
           </div>
         </div>
-
-        {/* Social Links */}
-        <div className="flex items-center gap-4">
-          <span className="text-xs text-dark-text-muted">
-            #InterregNEXT #HUSKROUA
-          </span>
-        </div>
-      </div>
-    </footer>
+      </CardContent>
+    </Card>
   );
-};
+}
 
