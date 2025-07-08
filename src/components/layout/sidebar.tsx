@@ -14,7 +14,8 @@ import {
   AlertTriangle,
   BarChart,
   X,
-  ChevronRight
+  ChevronRight,
+  Columns
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -43,6 +44,16 @@ export function Sidebar({ open = false, onOpenChange }: SidebarProps) {
       title: 'Dashboard',
       href: '/dashboard',
       icon: <LayoutDashboard className="h-5 w-5" />,
+    },
+    {
+      title: 'Kanban Board',
+      href: '/kanban',
+      icon: <Columns className="h-5 w-5" />,
+    },
+    {
+      title: 'Projektové úlohy',
+      href: '/project-kanban',
+      icon: <Columns className="h-5 w-5" />,
     },
     {
       title: 'Úlohy',

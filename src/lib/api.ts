@@ -1,5 +1,14 @@
 // src/lib/api.ts
-import { Task, User, ComplianceCheck, Activity } from '@/types';
+import { 
+  Task, 
+  User, 
+  ComplianceCheck, 
+  Activity, 
+  ProjectTask, 
+  ProjectDocument, 
+  SubTask, 
+  KanbanBoard 
+} from '@/types';
 
 // Base API URL
 const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
@@ -134,11 +143,87 @@ export const ActivityAPI = {
   },
 };
 
+// Project Task API
+export const ProjectTaskAPI = {
+  // Get all project tasks with optional filters
+  getProjectTasks: (filters?: Record<string, string>) => {
+    const queryParams = filters
+      ? `?${new URLSearchParams(filters).toString()}`
+      : '';
+    return fetchAPI<ProjectTask[]>(`/api/project-tasks${queryParams}`);
+  },
+
+  // Get a single project task by ID
+  getProjectTask: (id: string) => {
+    return fetchAPI<ProjectTask>(`/api/project-tasks/${id}`);
+  },
+
+  // Create a new project task
+  createProjectTask: (task: Partial<ProjectTask>) => {
+    return fetchAPI<ProjectTask>('/api/project-tasks', {
+      method: 'POST',
+      body: JSON.stringify(task),
+    });
+  },
+
+  // Update a project task
+  updateProjectTask: (id: string, task: Partial<ProjectTask>) => {
+    return fetchAPI<ProjectTask>(`/api/project-tasks/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(task),
+    });
+  },
+
+  // Delete a project task
+  deleteProjectTask: (id: string) => {
+    return fetchAPI<{ success: boolean }>(`/api/project-tasks/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
+  // Generate subtasks for a project task
+  generateSubTasks: (id: string) => {
+    return fetchAPI<{ message: string; subTasks: SubTask[] }>(`/api/project-tasks/${id}/generate-subtasks`, {
+      method: 'POST',
+    });
+  },
+};
+
+// Project Document API
+export const ProjectDocumentAPI = {
+  // Get all project documents with optional filters
+  getProjectDocuments: (filters?: Record<string, string>) => {
+    const queryParams = filters
+      ? `?${new URLSearchParams(filters).toString()}`
+      : '';
+    return fetchAPI<ProjectDocument[]>(`/api/project-documents${queryParams}`);
+  },
+
+  // Create a new project document
+  createProjectDocument: (document: Partial<ProjectDocument>) => {
+    return fetchAPI<ProjectDocument>('/api/project-documents', {
+      method: 'POST',
+      body: JSON.stringify(document),
+    });
+  },
+};
+
+// Kanban API
+export const KanbanAPI = {
+  // Get kanban board data
+  getKanbanBoard: () => {
+    return fetchAPI<KanbanBoard>('/api/kanban');
+  },
+};
+
 // Export all APIs
 export const api = {
   tasks: TaskAPI,
   users: UserAPI,
   compliance: ComplianceAPI,
   activities: ActivityAPI,
+  projectTasks: ProjectTaskAPI,
+  projectDocuments: ProjectDocumentAPI,
+  kanban: KanbanAPI,
 };
 

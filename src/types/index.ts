@@ -142,3 +142,100 @@ export interface Document {
   updatedAt: string;
 }
 
+// Project Document Types
+export interface ProjectDocument {
+  id: string;
+  internalNumber: number;
+  originalName: string;
+  taskType: string;
+  isDirectSource: boolean;
+  notes?: string;
+  filePath?: string;
+  createdAt: string;
+  updatedAt: string;
+  projectTasks?: ProjectTask[];
+}
+
+// Project Task Types
+export interface ProjectTask {
+  id: string;
+  sequenceNumber: string;
+  taskType: string;
+  title: string;
+  detailedDescription: string;
+  source: string;
+  priority: string;
+  repetition: string;
+  startDate?: string;
+  endDate?: string;
+  duration?: string;
+  responsiblePerson?: string;
+  expectedResult?: string;
+  fulfillsKC: boolean;
+  notes?: string;
+  documentId?: string;
+  document?: ProjectDocument;
+  subTasks?: SubTask[];
+  periodicity?: TaskPeriodicity;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Task Periodicity Types
+export enum PeriodicityType {
+  ONCE = 'ONCE',
+  DAILY = 'DAILY',
+  WEEKLY = 'WEEKLY',
+  MONTHLY = 'MONTHLY',
+  QUARTERLY = 'QUARTERLY',
+  SEMI_ANNUALLY = 'SEMI_ANNUALLY',
+  ANNUALLY = 'ANNUALLY',
+  CUSTOM = 'CUSTOM',
+}
+
+export interface TaskPeriodicity {
+  id: string;
+  projectTaskId: string;
+  type: PeriodicityType;
+  frequency: number;
+  interval: number;
+  customPattern?: string;
+  createdAt: string;
+  updatedAt: string;
+  projectTask?: ProjectTask;
+}
+
+// Sub Task Types
+export enum SubTaskStatus {
+  PENDING = 'PENDING',
+  IN_PROGRESS = 'IN_PROGRESS',
+  COMPLETED = 'COMPLETED',
+  OVERDUE = 'OVERDUE',
+}
+
+export interface SubTask {
+  id: string;
+  projectTaskId: string;
+  title: string;
+  description?: string;
+  dueDate: string;
+  status: SubTaskStatus;
+  generatedAt: string;
+  completedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+  projectTask?: ProjectTask;
+}
+
+// Kanban Board Types
+export interface KanbanColumn {
+  id: string;
+  title: string;
+  periodicityType: PeriodicityType;
+  tasks: ProjectTask[];
+}
+
+export interface KanbanBoard {
+  columns: KanbanColumn[];
+}
+
