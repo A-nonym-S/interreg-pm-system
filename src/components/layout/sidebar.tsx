@@ -221,7 +221,7 @@ export function Sidebar({ open = false, onOpenChange }: SidebarProps) {
         </ScrollArea>
         
         {/* Project info */}
-        <div className="mt-auto pt-4 border-t border-border">
+        <div className="mt-auto pt-4 border-t border-gray-200">
           <p className="text-xs text-muted-foreground">
             HUSKROUA/2401/LIP/0001
           </p>

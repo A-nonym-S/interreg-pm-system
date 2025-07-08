@@ -264,7 +264,7 @@ export default function TaskDetailPage() {
   
   if (!task) {
     return (
-      <div className="bg-muted/30 border border-border rounded-lg p-8 text-center">
+      <div className="bg-muted/30 border border-gray-200 rounded-lg p-8 text-center">
         <p className="text-muted-foreground">Úloha nebola nájdená.</p>
         <Button variant="outline" className="mt-4" onClick={() => window.history.back()}>
           <ArrowLeft className="h-4 w-4 mr-2" />

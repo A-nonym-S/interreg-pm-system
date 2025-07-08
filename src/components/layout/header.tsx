@@ -82,7 +82,7 @@ export function Header({ onToggleSidebar }: HeaderProps) {
         </Button>
         
         {languageMenuOpen && (
-          <div className="absolute right-0 mt-2 w-40 rounded-md bg-popover shadow-md border border-border z-50">
+          <div className="absolute right-0 mt-2 w-40 rounded-md bg-popover shadow-md border border-gray-200 z-50">
             <div className="py-1">
               {languages.map((lang) => (
                 <button
@@ -128,9 +128,9 @@ export function Header({ onToggleSidebar }: HeaderProps) {
         </Button>
         
         {userMenuOpen && (
-          <div className="absolute right-0 mt-2 w-48 rounded-md bg-popover shadow-md border border-border z-50">
+          <div className="absolute right-0 mt-2 w-48 rounded-md bg-popover shadow-md border border-gray-200 z-50">
             <div className="py-1">
-              <div className="px-4 py-2 border-b border-border">
+              <div className="px-4 py-2 border-b border-gray-200">
                 <p className="font-medium">Mária Novák</p>
                 <p className="text-xs text-muted-foreground">maria.novak@example.com</p>
               </div>
@@ -157,7 +157,7 @@ export function Header({ onToggleSidebar }: HeaderProps) {
                 </div>
               </Link>
               
-              <div className="border-t border-border mt-1 pt-1">
+              <div className="border-t border-gray-200 mt-1 pt-1">
                 <button
                   className="block w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-muted"
                   onClick={() => {

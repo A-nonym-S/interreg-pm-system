@@ -118,7 +118,7 @@ const SelectContent = ({ children }: SelectContentProps) => {
         className="fixed inset-0 z-40" 
         onClick={() => setOpen(false)}
       />
-      <div className="absolute top-full left-0 z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-md max-h-60 overflow-auto">
+      <div className="absolute top-full left-0 z-50 w-full mt-1 bg-popover border border-gray-200 rounded-md shadow-md max-h-60 overflow-auto">
         {children}
       </div>
     </>

@@ -166,7 +166,7 @@ export function AITaskCreator({ onTaskCreated }: AITaskCreatorProps) {
         
         {/* Classification result */}
         {classification && (
-          <div className="bg-muted/30 border border-border rounded-lg p-4 space-y-3">
+          <div className="bg-muted/30 border border-gray-200 rounded-lg p-4 space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-medium">AI Klasifikácia</h3>
               <div className="flex items-center gap-1 text-xs text-muted-foreground">

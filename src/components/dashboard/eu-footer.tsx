@@ -49,7 +49,7 @@ export function EUFooter({
         </div>
         
         {/* Disclaimer */}
-        <div className="mt-4 pt-4 border-t border-border">
+        <div className="mt-4 pt-4 border-t border-gray-200">
           <p className="text-xs text-muted-foreground text-center">
             Tento obsah reprezentuje názory autora. Európska komisia nenesie žiadnu zodpovednosť za použitie informácií, ktoré obsahuje.
           </p>

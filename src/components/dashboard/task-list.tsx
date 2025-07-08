@@ -129,7 +129,7 @@ export function TaskList({
               <TaskCard key={task.id} task={task} onClick={handleTaskClick} />
             ))
           ) : (
-            <div className="bg-muted/30 border border-border rounded-lg p-8 text-center">
+            <div className="bg-muted/30 border border-gray-200 rounded-lg p-8 text-center">
               <p className="text-muted-foreground">Žiadne úlohy neboli nájdené.</p>
               <Button variant="outline" className="mt-4" onClick={handleCreateTask}>
                 <Plus className="h-4 w-4 mr-2" />

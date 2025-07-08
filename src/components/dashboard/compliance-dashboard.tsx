@@ -202,7 +202,7 @@ export function ComplianceDashboard({ initialChecks }: ComplianceDashboardProps)
               
               {/* Compliance stats */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-muted/30 border border-border rounded-lg p-3 flex items-center justify-between">
+                <div className="bg-muted/30 border border-gray-200 rounded-lg p-3 flex items-center justify-between">
                   <div>
                     <p className="text-xs text-muted-foreground">Celkom</p>
                     <p className="text-xl font-bold">{stats.total}</p>
