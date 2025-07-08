@@ -38,10 +38,8 @@ export function TaskList({
   
   // Fetch tasks if not provided
   useEffect(() => {
-    if (!initialTasks) {
-      fetchTasks();
-    }
-  }, [initialTasks, statusFilter]);
+    fetchTasks();
+  }, [statusFilter]);
   
   const fetchTasks = async () => {
     try {
@@ -73,6 +71,10 @@ export function TaskList({
   
   const handleCreateTask = () => {
     router.push('/tasks/create');
+  };
+  
+  const handleTaskClick = (task: Task) => {
+    router.push(`/tasks/${task.id}`);
   };
   
   return (
@@ -124,7 +126,7 @@ export function TaskList({
         <div className="space-y-4">
           {tasks.length > 0 ? (
             tasks.map((task) => (
-              <TaskCard key={task.id} task={task} />
+              <TaskCard key={task.id} task={task} onClick={handleTaskClick} />
             ))
           ) : (
             <div className="bg-muted/30 border border-border rounded-lg p-8 text-center">

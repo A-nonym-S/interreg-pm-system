@@ -118,8 +118,8 @@ export function Sidebar({ open = false, onOpenChange }: SidebarProps) {
       
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-50 w-full max-w-xs border-r bg-card p-6 shadow-lg transition-transform md:static md:z-0 md:shadow-none ${
-          isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+        className={`fixed top-0 bottom-0 left-0 z-50 w-full max-w-xs border-r bg-card p-6 shadow-lg transition-transform ${
+          isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         {/* Mobile close button */}

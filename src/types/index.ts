@@ -49,6 +49,8 @@ export enum TaskCategory {
   PUBLICITY = 'PUBLICITY',
   PARTNERSHIP = 'PARTNERSHIP',
   MONITORING = 'MONITORING',
+  TECHNICAL = 'TECHNICAL',
+  ADMINISTRATIVE = 'ADMINISTRATIVE',
 }
 
 export interface Task {

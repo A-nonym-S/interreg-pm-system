@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,10 +22,10 @@ export default function CreateTaskPage() {
   const [users, setUsers] = useState([]);
 
   // Fetch users on component mount
-  useState(() => {
+  useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await api.getUsers();
+        const response = await api.users.getUsers();
         setUsers(response);
       } catch (error) {
         console.error('Failed to fetch users:', error);
@@ -46,18 +46,17 @@ export default function CreateTaskPage() {
     setLoading(true);
     
     try {
-      await api.createTask({
+      await api.tasks.createTask({
         title,
         description,
         category: category as TaskCategory,
         priority: priority as TaskPriority,
-        status: TaskStatus.PENDING,
+        status: TaskStatus.TODO,
         assigneeId: assigneeId || undefined,
         progress: 0
       });
       
-      router.push('/tasks');
-      router.refresh();
+      router.push('/dashboard');
     } catch (error) {
       console.error('Failed to create task:', error);
       alert('Nepodarilo sa vytvoriť úlohu. Skúste to znova.');

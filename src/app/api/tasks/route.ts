@@ -145,15 +145,17 @@ export async function POST(request: NextRequest) {
       },
     });
     
-    // Create activity record
-    await prisma.activity.create({
-      data: {
-        type: 'TASK_CREATED',
-        description: `Úloha '${task.title}' bola vytvorená`,
-        userId: validatedData.assigneeId || 'system', // Fallback to system if no assignee
-        taskId: task.id,
-      },
-    });
+    // Create activity record only if assignee is specified
+    if (validatedData.assigneeId) {
+      await prisma.activity.create({
+        data: {
+          type: 'TASK_CREATED',
+          description: `Úloha '${task.title}' bola vytvorená`,
+          userId: validatedData.assigneeId,
+          taskId: task.id,
+        },
+      });
+    }
     
     return NextResponse.json(task, { status: 201 });
   } catch (error) {
