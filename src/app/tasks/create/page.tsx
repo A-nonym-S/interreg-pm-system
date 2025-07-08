@@ -2,76 +2,178 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { AITaskCreator } from '@/components/dashboard/ai-task-creator';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { TaskCategory, TaskPriority, TaskStatus } from '@/types';
+import { api } from '@/lib/api';
 
 export default function CreateTaskPage() {
   const router = useRouter();
-  const [taskCreated, setTaskCreated] = useState(false);
-  
-  // Handle task creation
-  const handleTaskCreated = (task: any) => {
-    setTaskCreated(true);
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [category, setCategory] = useState<TaskCategory | ''>('');
+  const [priority, setPriority] = useState<TaskPriority | ''>('');
+  const [assigneeId, setAssigneeId] = useState<string | ''>('');
+  const [loading, setLoading] = useState(false);
+  const [users, setUsers] = useState([]);
+
+  // Fetch users on component mount
+  useState(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await api.getUsers();
+        setUsers(response);
+      } catch (error) {
+        console.error('Failed to fetch users:', error);
+      }
+    };
     
-    // Redirect to task detail page after a short delay
-    setTimeout(() => {
-      router.push(`/tasks/${task.id}`);
-    }, 1500);
+    fetchUsers();
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!title || !description || !category || !priority) {
+      alert('Prosím vyplňte všetky povinné polia');
+      return;
+    }
+    
+    setLoading(true);
+    
+    try {
+      await api.createTask({
+        title,
+        description,
+        category: category as TaskCategory,
+        priority: priority as TaskPriority,
+        status: TaskStatus.PENDING,
+        assigneeId: assigneeId || undefined,
+        progress: 0
+      });
+      
+      router.push('/tasks');
+      router.refresh();
+    } catch (error) {
+      console.error('Failed to create task:', error);
+      alert('Nepodarilo sa vytvoriť úlohu. Skúste to znova.');
+    } finally {
+      setLoading(false);
+    }
   };
-  
+
   return (
-    <div className="space-y-8 pb-10">
-      {/* Back button */}
-      <div className="flex items-center">
-        <Button variant="outline" onClick={() => router.back()}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Späť
-        </Button>
-      </div>
+    <div className="container mx-auto py-6">
+      <h1 className="text-3xl font-bold mb-6">Vytvoriť novú úlohu</h1>
       
-      <h1 className="text-3xl font-bold">Vytvoriť novú úlohu</h1>
-      
-      {/* Success message */}
-      {taskCreated && (
-        <div className="bg-green-100 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-200 p-4 rounded-md">
-          <p className="font-medium">Úloha bola úspešne vytvorená!</p>
-          <p className="text-sm">Presmerovanie na detail úlohy...</p>
-        </div>
-      )}
-      
-      {/* AI Task Creator */}
-      <div className="max-w-2xl">
-        <AITaskCreator onTaskCreated={handleTaskCreated} />
-      </div>
-      
-      {/* Instructions */}
-      <div className="max-w-2xl bg-muted/30 border border-border rounded-lg p-6 space-y-4">
-        <h2 className="text-xl font-semibold">Ako to funguje?</h2>
-        
-        <div className="space-y-2">
-          <h3 className="font-medium">1. Opíšte úlohu</h3>
-          <p className="text-muted-foreground">
-            Zadajte detailný popis úlohy. Čím viac informácií poskytnete, tým presnejšie bude AI klasifikácia.
-          </p>
-        </div>
-        
-        <div className="space-y-2">
-          <h3 className="font-medium">2. AI klasifikácia</h3>
-          <p className="text-muted-foreground">
-            AI analyzuje popis a automaticky určí kategóriu, prioritu a ďalšie parametre úlohy.
-            Môžete si prezrieť klasifikáciu pred vytvorením úlohy.
-          </p>
-        </div>
-        
-        <div className="space-y-2">
-          <h3 className="font-medium">3. Vytvorenie úlohy</h3>
-          <p className="text-muted-foreground">
-            Po kliknutí na tlačidlo "Vytvoriť úlohu" sa úloha automaticky vytvorí s parametrami
-            určenými AI. Systém tiež automaticky vytvorí príslušné compliance kontroly, ak je to potrebné.
-          </p>
-        </div>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Nová úloha</CardTitle>
+          <CardDescription>Vyplňte detaily novej úlohy</CardDescription>
+        </CardHeader>
+        <form onSubmit={handleSubmit}>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="title">Názov úlohy *</Label>
+              <Input 
+                id="title" 
+                value={title} 
+                onChange={(e) => setTitle(e.target.value)} 
+                placeholder="Zadajte názov úlohy"
+                required
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="description">Popis úlohy *</Label>
+              <Textarea 
+                id="description" 
+                value={description} 
+                onChange={(e) => setDescription(e.target.value)} 
+                placeholder="Zadajte popis úlohy"
+                rows={4}
+                required
+              />
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="category">Kategória *</Label>
+                <Select 
+                  value={category} 
+                  onValueChange={(value) => setCategory(value as TaskCategory)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Vyberte kategóriu" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={TaskCategory.FINANCIAL}>Finančné</SelectItem>
+                    <SelectItem value={TaskCategory.REPORTING}>Reporting</SelectItem>
+                    <SelectItem value={TaskCategory.COMPLIANCE}>Compliance</SelectItem>
+                    <SelectItem value={TaskCategory.PROCUREMENT}>Obstarávanie</SelectItem>
+                    <SelectItem value={TaskCategory.TECHNICAL}>Technické</SelectItem>
+                    <SelectItem value={TaskCategory.ADMINISTRATIVE}>Administratívne</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="priority">Priorita *</Label>
+                <Select 
+                  value={priority} 
+                  onValueChange={(value) => setPriority(value as TaskPriority)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Vyberte prioritu" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={TaskPriority.LOW}>Nízka</SelectItem>
+                    <SelectItem value={TaskPriority.MEDIUM}>Stredná</SelectItem>
+                    <SelectItem value={TaskPriority.HIGH}>Vysoká</SelectItem>
+                    <SelectItem value={TaskPriority.CRITICAL}>Kritická</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="assignee">Priradiť používateľovi</Label>
+              <Select 
+                value={assigneeId} 
+                onValueChange={(value) => setAssigneeId(value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Vyberte používateľa" />
+                </SelectTrigger>
+                <SelectContent>
+                  {users.map((user: any) => (
+                    <SelectItem key={user.id} value={user.id}>
+                      {user.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+          
+          <CardFooter className="flex justify-between">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => router.back()}
+            >
+              Zrušiť
+            </Button>
+            <Button type="submit" disabled={loading}>
+              {loading ? 'Vytváranie...' : 'Vytvoriť úlohu'}
+            </Button>
+          </CardFooter>
+        </form>
+      </Card>
     </div>
   );
 }

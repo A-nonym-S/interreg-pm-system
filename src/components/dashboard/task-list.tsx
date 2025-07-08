@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { TaskCard } from './task-card';
-import { Task, TaskStatus, Priority, TaskCategory } from '@/types';
+import { Task, TaskStatus, TaskPriority, TaskCategory } from '@/types';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { 
@@ -13,6 +13,7 @@ import {
   AlertTriangle, 
   X 
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 interface TaskListProps {
   initialTasks?: Task[];
@@ -27,21 +28,20 @@ export function TaskList({
   showFilters = true,
   limit = 10
 }: TaskListProps) {
+  const router = useRouter();
   const [tasks, setTasks] = useState<Task[]>(initialTasks || []);
   const [loading, setLoading] = useState(!initialTasks);
   const [error, setError] = useState<string | null>(null);
   
   // Filter states
   const [statusFilter, setStatusFilter] = useState<TaskStatus | 'ALL'>('ALL');
-  const [priorityFilter, setPriorityFilter] = useState<Priority | 'ALL'>('ALL');
-  const [categoryFilter, setCategoryFilter] = useState<TaskCategory | 'ALL'>('ALL');
   
   // Fetch tasks if not provided
   useEffect(() => {
     if (!initialTasks) {
       fetchTasks();
     }
-  }, [initialTasks, statusFilter, priorityFilter, categoryFilter]);
+  }, [initialTasks, statusFilter]);
   
   const fetchTasks = async () => {
     try {
@@ -50,8 +50,6 @@ export function TaskList({
       // Build filter object
       const filters: Record<string, string> = {};
       if (statusFilter !== 'ALL') filters.status = statusFilter;
-      if (priorityFilter !== 'ALL') filters.priority = priorityFilter;
-      if (categoryFilter !== 'ALL') filters.category = categoryFilter;
       
       const data = await api.tasks.getTasks(filters);
       setTasks(data.slice(0, limit));
@@ -67,11 +65,15 @@ export function TaskList({
   // Status filter options with icons
   const statusOptions = [
     { value: 'ALL', label: 'Všetky', icon: <Filter className="h-4 w-4" /> },
-    { value: TaskStatus.PENDING, label: 'Čakajúce', icon: <Clock className="h-4 w-4" /> },
+    { value: TaskStatus.TODO, label: 'Čakajúce', icon: <Clock className="h-4 w-4" /> },
     { value: TaskStatus.IN_PROGRESS, label: 'V procese', icon: <AlertTriangle className="h-4 w-4" /> },
-    { value: TaskStatus.COMPLETED, label: 'Dokončené', icon: <CheckCircle className="h-4 w-4" /> },
+    { value: TaskStatus.DONE, label: 'Dokončené', icon: <CheckCircle className="h-4 w-4" /> },
     { value: TaskStatus.BLOCKED, label: 'Blokované', icon: <X className="h-4 w-4" /> },
   ];
+  
+  const handleCreateTask = () => {
+    router.push('/tasks/create');
+  };
   
   return (
     <div className="space-y-4">
@@ -80,27 +82,25 @@ export function TaskList({
         
         <div className="flex space-x-2">
           {showFilters && (
-            <div className="flex space-x-2">
+            <div className="flex space-x-1">
               {/* Status filter */}
-              <div className="flex space-x-1">
-                {statusOptions.map((option) => (
-                  <Button
-                    key={option.value}
-                    variant={statusFilter === option.value ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setStatusFilter(option.value as TaskStatus | 'ALL')}
-                    className="flex items-center gap-1"
-                  >
-                    {option.icon}
-                    <span className="hidden md:inline">{option.label}</span>
-                  </Button>
-                ))}
-              </div>
+              {statusOptions.map((option) => (
+                <Button
+                  key={option.value}
+                  variant={statusFilter === option.value ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setStatusFilter(option.value as TaskStatus | 'ALL')}
+                  className="flex items-center gap-1"
+                >
+                  {option.icon}
+                  <span className="hidden md:inline">{option.label}</span>
+                </Button>
+              ))}
             </div>
           )}
           
           {/* New task button */}
-          <Button className="flex items-center gap-1">
+          <Button className="flex items-center gap-1" onClick={handleCreateTask}>
             <Plus className="h-4 w-4" />
             <span>Nová úloha</span>
           </Button>
@@ -129,7 +129,7 @@ export function TaskList({
           ) : (
             <div className="bg-muted/30 border border-border rounded-lg p-8 text-center">
               <p className="text-muted-foreground">Žiadne úlohy neboli nájdené.</p>
-              <Button variant="outline" className="mt-4">
+              <Button variant="outline" className="mt-4" onClick={handleCreateTask}>
                 <Plus className="h-4 w-4 mr-2" />
                 Vytvoriť novú úlohu
               </Button>

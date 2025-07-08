@@ -1,12 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { z } from 'zod';
+import { UserRole } from '@/types';
 
 // Validation schema for user creation
 const userCreateSchema = z.object({
-  email: z.string().email(),
   name: z.string().min(2).max(100),
-  role: z.enum(['ADMIN', 'PROJECT_MANAGER', 'USER', 'VIEWER']).default('USER'),
+  email: z.string().email(),
+  role: z.enum([
+    UserRole.ADMIN,
+    UserRole.PROJECT_MANAGER,
+    UserRole.TEAM_MEMBER,
+    UserRole.STAKEHOLDER,
+    UserRole.GUEST
+  ]).default(UserRole.TEAM_MEMBER),
   avatar: z.string().optional(),
 });
 
@@ -23,16 +30,15 @@ export async function GET(request: NextRequest) {
     
     if (role) filter.role = role;
     
+    // Create mock users if no users exist
+    const usersCount = await prisma.user.count();
+    
+    if (usersCount === 0) {
+      await createMockUsers();
+    }
+    
     const users = await prisma.user.findMany({
       where: filter,
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        avatar: true,
-        createdAt: true,
-      },
       orderBy: {
         name: 'asc',
       },
@@ -42,7 +48,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error fetching users:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch users' },
+      { error: 'Failed to fetch users', message: (error as Error).message },
       { status: 500 }
     );
   }
@@ -56,29 +62,23 @@ export async function POST(request: NextRequest) {
     // Validate request body
     const validatedData = userCreateSchema.parse(body);
     
-    // Check if user with this email already exists
+    // Check if user with email already exists
     const existingUser = await prisma.user.findUnique({
-      where: { email: validatedData.email },
+      where: {
+        email: validatedData.email,
+      },
     });
     
     if (existingUser) {
       return NextResponse.json(
         { error: 'User with this email already exists' },
-        { status: 409 }
+        { status: 400 }
       );
     }
     
     // Create the user
     const user = await prisma.user.create({
       data: validatedData,
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        avatar: true,
-        createdAt: true,
-      },
     });
     
     return NextResponse.json(user, { status: 201 });
@@ -93,9 +93,41 @@ export async function POST(request: NextRequest) {
     }
     
     return NextResponse.json(
-      { error: 'Failed to create user' },
+      { error: 'Failed to create user', message: (error as Error).message },
       { status: 500 }
     );
+  }
+}
+
+// Helper function to create mock users for testing
+async function createMockUsers() {
+  const mockUsers = [
+    {
+      name: 'Mária Nováková',
+      email: 'maria.novakova@example.com',
+      role: UserRole.PROJECT_MANAGER,
+    },
+    {
+      name: 'Ján Horváth',
+      email: 'jan.horvath@example.com',
+      role: UserRole.TEAM_MEMBER,
+    },
+    {
+      name: 'Peter Kováč',
+      email: 'peter.kovac@example.com',
+      role: UserRole.TEAM_MEMBER,
+    },
+    {
+      name: 'Anna Veselá',
+      email: 'anna.vesela@example.com',
+      role: UserRole.STAKEHOLDER,
+    },
+  ];
+
+  for (const user of mockUsers) {
+    await prisma.user.create({
+      data: user,
+    });
   }
 }
 

@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { ComplianceBadge } from './compliance-badge';
-import { ComplianceCategory, ComplianceStatus, ComplianceCheck } from '@/types';
+import { ComplianceType, ComplianceStatus, ComplianceCheck } from '@/types';
 import { api } from '@/lib/api';
 import { 
   CheckCircle, 
@@ -16,7 +16,9 @@ import {
   FileText,
   Shield,
   Database,
-  BarChart
+  BarChart,
+  DollarSign,
+  ShoppingBag
 } from 'lucide-react';
 
 interface ComplianceDashboardProps {
@@ -57,41 +59,46 @@ export function ComplianceDashboard({ initialChecks }: ComplianceDashboardProps)
         setChecks([
           {
             id: '1',
-            category: ComplianceCategory.VISUAL_IDENTITY,
-            status: ComplianceStatus.COMPLIANT,
+            title: 'Vizuálna identita',
             description: 'Všetky materiály spĺňajú požiadavky INTERREG vizuálnej identity',
+            type: ComplianceType.VISUAL_IDENTITY,
+            status: ComplianceStatus.COMPLIANT,
             createdAt: '2025-01-01T10:00:00Z',
             updatedAt: '2025-01-15T14:30:00Z',
           },
           {
             id: '2',
-            category: ComplianceCategory.SANCTIONS_CHECK,
-            status: ComplianceStatus.COMPLIANT,
+            title: 'Sankčné zoznamy',
             description: 'Všetci partneri boli skontrolovaní voči sankčným zoznamom EU',
+            type: ComplianceType.SANCTIONS_LIST,
+            status: ComplianceStatus.COMPLIANT,
             createdAt: '2025-01-01T10:00:00Z',
             updatedAt: '2025-01-15T14:30:00Z',
           },
           {
             id: '3',
-            category: ComplianceCategory.GDPR,
-            status: ComplianceStatus.PENDING_REVIEW,
+            title: 'GDPR',
             description: 'Čaká sa na kontrolu GDPR dokumentácie',
+            type: ComplianceType.GDPR,
+            status: ComplianceStatus.PENDING,
             createdAt: '2025-01-01T10:00:00Z',
             updatedAt: '2025-01-15T14:30:00Z',
           },
           {
             id: '4',
-            category: ComplianceCategory.REPORTING,
-            status: ComplianceStatus.NEEDS_ACTION,
+            title: 'Reporting',
             description: 'Potrebné aktualizovať mesačný report podľa nových požiadaviek',
+            type: ComplianceType.REPORTING,
+            status: ComplianceStatus.NON_COMPLIANT,
             createdAt: '2025-01-01T10:00:00Z',
             updatedAt: '2025-01-15T14:30:00Z',
           },
           {
             id: '5',
-            category: ComplianceCategory.FINANCIAL,
-            status: ComplianceStatus.COMPLIANT,
+            title: 'Financie',
             description: 'Finančné reporty sú v súlade s INTERREG požiadavkami',
+            type: ComplianceType.FINANCIAL,
+            status: ComplianceStatus.COMPLIANT,
             createdAt: '2025-01-01T10:00:00Z',
             updatedAt: '2025-01-15T14:30:00Z',
           },
@@ -109,7 +116,6 @@ export function ComplianceDashboard({ initialChecks }: ComplianceDashboardProps)
         compliant: 0,
         nonCompliant: 0,
         pending: 0,
-        needsAction: 0,
         complianceRate: 0,
       };
     }
@@ -117,8 +123,7 @@ export function ComplianceDashboard({ initialChecks }: ComplianceDashboardProps)
     const total = checks.length;
     const compliant = checks.filter(check => check.status === ComplianceStatus.COMPLIANT).length;
     const nonCompliant = checks.filter(check => check.status === ComplianceStatus.NON_COMPLIANT).length;
-    const pending = checks.filter(check => check.status === ComplianceStatus.PENDING_REVIEW).length;
-    const needsAction = checks.filter(check => check.status === ComplianceStatus.NEEDS_ACTION).length;
+    const pending = checks.filter(check => check.status === ComplianceStatus.PENDING).length;
     
     // Calculate compliance rate (excluding pending checks)
     const relevantChecks = total - pending;
@@ -131,7 +136,6 @@ export function ComplianceDashboard({ initialChecks }: ComplianceDashboardProps)
       compliant,
       nonCompliant,
       pending,
-      needsAction,
       complianceRate,
     };
   };
@@ -140,11 +144,12 @@ export function ComplianceDashboard({ initialChecks }: ComplianceDashboardProps)
   
   // Category titles
   const categoryTitles = {
-    [ComplianceCategory.VISUAL_IDENTITY]: 'Vizuálna identita',
-    [ComplianceCategory.SANCTIONS_CHECK]: 'Sankčné zoznamy',
-    [ComplianceCategory.GDPR]: 'GDPR',
-    [ComplianceCategory.REPORTING]: 'Reporting',
-    [ComplianceCategory.FINANCIAL]: 'Financie',
+    [ComplianceType.VISUAL_IDENTITY]: 'Vizuálna identita',
+    [ComplianceType.SANCTIONS_LIST]: 'Sankčné zoznamy',
+    [ComplianceType.GDPR]: 'GDPR',
+    [ComplianceType.REPORTING]: 'Reporting',
+    [ComplianceType.FINANCIAL]: 'Financie',
+    [ComplianceType.PROCUREMENT]: 'Verejné obstarávanie',
   };
   
   return (
@@ -221,12 +226,12 @@ export function ComplianceDashboard({ initialChecks }: ComplianceDashboardProps)
                   <Clock className="h-5 w-5 text-yellow-500" />
                 </div>
                 
-                <div className="bg-orange-500/10 border border-orange-500/20 rounded-lg p-3 flex items-center justify-between">
+                <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 flex items-center justify-between">
                   <div>
-                    <p className="text-xs text-muted-foreground">Vyžaduje akciu</p>
-                    <p className="text-xl font-bold">{stats.needsAction}</p>
+                    <p className="text-xs text-muted-foreground">Nevyhovuje</p>
+                    <p className="text-xl font-bold">{stats.nonCompliant}</p>
                   </div>
-                  <AlertTriangle className="h-5 w-5 text-orange-500" />
+                  <XCircle className="h-5 w-5 text-red-500" />
                 </div>
               </div>
             </>
@@ -260,9 +265,9 @@ export function ComplianceDashboard({ initialChecks }: ComplianceDashboardProps)
           checks.map((check) => (
             <ComplianceBadge
               key={check.id}
-              category={check.category}
+              category={check.type}
               status={check.status}
-              title={categoryTitles[check.category]}
+              title={check.title || categoryTitles[check.type]}
               description={check.description}
               onClick={() => console.log('Clicked compliance check:', check.id)}
             />

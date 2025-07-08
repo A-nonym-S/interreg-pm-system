@@ -1,29 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { z } from 'zod';
+import { UserRole } from '@/types';
 
 // Validation schema for user update
 const userUpdateSchema = z.object({
   name: z.string().min(2).max(100).optional(),
-  role: z.enum(['ADMIN', 'PROJECT_MANAGER', 'USER', 'VIEWER']).optional(),
-  avatar: z.string().optional().nullable(),
+  email: z.string().email().optional(),
+  role: z.enum([
+    UserRole.ADMIN,
+    UserRole.PROJECT_MANAGER,
+    UserRole.TEAM_MEMBER,
+    UserRole.STAKEHOLDER,
+    UserRole.GUEST
+  ]).optional(),
+  avatar: z.string().optional(),
 });
 
-// GET /api/users/[id] - Get a specific user
+// GET /api/users/[id] - Get a user by ID
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
     const user = await prisma.user.findUnique({
-      where: { id: params.id },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        avatar: true,
-        createdAt: true,
+      where: {
+        id: params.id,
+      },
+      include: {
         assignedTasks: {
           select: {
             id: true,
@@ -32,29 +36,18 @@ export async function GET(
             priority: true,
             category: true,
             deadline: true,
-            externalId: true,
           },
-          orderBy: {
-            createdAt: 'desc',
-          },
-          take: 10,
-        },
-        activities: {
-          orderBy: {
-            createdAt: 'desc',
-          },
-          take: 10,
         },
       },
     });
-
+    
     if (!user) {
       return NextResponse.json(
         { error: 'User not found' },
         { status: 404 }
       );
     }
-
+    
     return NextResponse.json(user);
   } catch (error) {
     console.error('Error fetching user:', error);
@@ -78,7 +71,9 @@ export async function PATCH(
     
     // Check if user exists
     const existingUser = await prisma.user.findUnique({
-      where: { id: params.id },
+      where: {
+        id: params.id,
+      },
     });
     
     if (!existingUser) {
@@ -88,21 +83,31 @@ export async function PATCH(
       );
     }
     
+    // Check if email is being updated and if it's already in use
+    if (validatedData.email && validatedData.email !== existingUser.email) {
+      const userWithEmail = await prisma.user.findUnique({
+        where: {
+          email: validatedData.email,
+        },
+      });
+      
+      if (userWithEmail) {
+        return NextResponse.json(
+          { error: 'Email is already in use' },
+          { status: 400 }
+        );
+      }
+    }
+    
     // Update the user
-    const updatedUser = await prisma.user.update({
-      where: { id: params.id },
-      data: validatedData,
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        avatar: true,
-        createdAt: true,
+    const user = await prisma.user.update({
+      where: {
+        id: params.id,
       },
+      data: validatedData,
     });
     
-    return NextResponse.json(updatedUser);
+    return NextResponse.json(user);
   } catch (error) {
     console.error('Error updating user:', error);
     
@@ -128,7 +133,9 @@ export async function DELETE(
   try {
     // Check if user exists
     const existingUser = await prisma.user.findUnique({
-      where: { id: params.id },
+      where: {
+        id: params.id,
+      },
     });
     
     if (!existingUser) {
@@ -140,7 +147,9 @@ export async function DELETE(
     
     // Delete the user
     await prisma.user.delete({
-      where: { id: params.id },
+      where: {
+        id: params.id,
+      },
     });
     
     return NextResponse.json({ success: true });

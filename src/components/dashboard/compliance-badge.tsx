@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, CardContent } from '@/components/ui/card';
-import { ComplianceCategory, ComplianceStatus } from '@/types';
+import { ComplianceType, ComplianceStatus } from '@/types';
 import { 
   CheckCircle, 
   AlertTriangle, 
@@ -10,44 +10,44 @@ import {
   FileText,
   Shield,
   Database,
-  BarChart
+  BarChart,
+  DollarSign,
+  ShoppingBag
 } from 'lucide-react';
 
 // Status icon mapping
 const statusIcons = {
   [ComplianceStatus.COMPLIANT]: <CheckCircle className="h-6 w-6 text-green-500" />,
   [ComplianceStatus.NON_COMPLIANT]: <XCircle className="h-6 w-6 text-red-500" />,
-  [ComplianceStatus.PENDING_REVIEW]: <Clock className="h-6 w-6 text-yellow-500" />,
-  [ComplianceStatus.NEEDS_ACTION]: <AlertTriangle className="h-6 w-6 text-orange-500" />,
+  [ComplianceStatus.PENDING]: <Clock className="h-6 w-6 text-yellow-500" />,
 };
 
 // Status text mapping
 const statusText = {
   [ComplianceStatus.COMPLIANT]: 'Vyhovuje',
   [ComplianceStatus.NON_COMPLIANT]: 'Nevyhovuje',
-  [ComplianceStatus.PENDING_REVIEW]: 'Čaká na kontrolu',
-  [ComplianceStatus.NEEDS_ACTION]: 'Vyžaduje akciu',
+  [ComplianceStatus.PENDING]: 'Čaká na kontrolu',
 };
 
 // Category icon mapping
 const categoryIcons = {
-  [ComplianceCategory.VISUAL_IDENTITY]: <FileText className="h-6 w-6 text-purple-500" />,
-  [ComplianceCategory.SANCTIONS_CHECK]: <Shield className="h-6 w-6 text-red-500" />,
-  [ComplianceCategory.GDPR]: <Database className="h-6 w-6 text-blue-500" />,
-  [ComplianceCategory.REPORTING]: <BarChart className="h-6 w-6 text-green-500" />,
-  [ComplianceCategory.FINANCIAL]: <BarChart className="h-6 w-6 text-yellow-500" />,
+  [ComplianceType.VISUAL_IDENTITY]: <FileText className="h-6 w-6 text-purple-500" />,
+  [ComplianceType.SANCTIONS_LIST]: <Shield className="h-6 w-6 text-red-500" />,
+  [ComplianceType.GDPR]: <Database className="h-6 w-6 text-blue-500" />,
+  [ComplianceType.REPORTING]: <BarChart className="h-6 w-6 text-green-500" />,
+  [ComplianceType.FINANCIAL]: <DollarSign className="h-6 w-6 text-yellow-500" />,
+  [ComplianceType.PROCUREMENT]: <ShoppingBag className="h-6 w-6 text-orange-500" />,
 };
 
 // Status color mapping
 const statusColors = {
   [ComplianceStatus.COMPLIANT]: 'bg-green-500/10 border-green-500/20',
   [ComplianceStatus.NON_COMPLIANT]: 'bg-red-500/10 border-red-500/20',
-  [ComplianceStatus.PENDING_REVIEW]: 'bg-yellow-500/10 border-yellow-500/20',
-  [ComplianceStatus.NEEDS_ACTION]: 'bg-orange-500/10 border-orange-500/20',
+  [ComplianceStatus.PENDING]: 'bg-yellow-500/10 border-yellow-500/20',
 };
 
 interface ComplianceBadgeProps {
-  category: ComplianceCategory;
+  category: ComplianceType;
   status: ComplianceStatus;
   title?: string;
   description?: string;

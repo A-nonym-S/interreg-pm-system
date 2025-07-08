@@ -5,7 +5,7 @@ import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Avatar } from '@/components/ui/avatar';
-import { Task, TaskStatus, Priority, TaskCategory } from '@/types';
+import { Task, TaskStatus, TaskPriority, TaskCategory } from '@/types';
 import { format } from 'date-fns';
 import { sk } from 'date-fns/locale';
 import { 
@@ -19,31 +19,32 @@ import {
 
 // Status icon mapping
 const statusIcons = {
-  [TaskStatus.PENDING]: <Clock className="h-5 w-5 text-yellow-500" />,
+  [TaskStatus.TODO]: <Clock className="h-5 w-5 text-yellow-500" />,
   [TaskStatus.IN_PROGRESS]: <AlertTriangle className="h-5 w-5 text-blue-500" />,
-  [TaskStatus.COMPLETED]: <CheckCircle className="h-5 w-5 text-green-500" />,
+  [TaskStatus.DONE]: <CheckCircle className="h-5 w-5 text-green-500" />,
   [TaskStatus.BLOCKED]: <X className="h-5 w-5 text-red-500" />,
-  [TaskStatus.CANCELLED]: <X className="h-5 w-5 text-gray-500" />,
 };
 
 // Priority color mapping
 const priorityColors = {
-  [Priority.LOW]: 'bg-green-500/10 text-green-500 border-green-500/20',
-  [Priority.MEDIUM]: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
-  [Priority.HIGH]: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20',
-  [Priority.CRITICAL]: 'bg-red-500/10 text-red-500 border-red-500/20',
+  [TaskPriority.LOW]: 'bg-green-500/10 text-green-500 border-green-500/20',
+  [TaskPriority.MEDIUM]: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
+  [TaskPriority.HIGH]: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20',
+  [TaskPriority.URGENT]: 'bg-red-500/10 text-red-500 border-red-500/20',
 };
 
 // Category color mapping
 const categoryColors = {
-  [TaskCategory.PUBLICITA]: 'bg-purple-500/10 text-purple-500 border-purple-500/20',
-  [TaskCategory.FINANCIE]: 'bg-green-500/10 text-green-500 border-green-500/20',
   [TaskCategory.REPORTING]: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
+  [TaskCategory.FINANCIAL]: 'bg-green-500/10 text-green-500 border-green-500/20',
+  [TaskCategory.TECHNICAL]: 'bg-purple-500/10 text-purple-500 border-purple-500/20',
+  [TaskCategory.ADMINISTRATIVE]: 'bg-gray-500/10 text-gray-500 border-gray-500/20',
   [TaskCategory.COMPLIANCE]: 'bg-red-500/10 text-red-500 border-red-500/20',
+  [TaskCategory.COMMUNICATION]: 'bg-indigo-500/10 text-indigo-500 border-indigo-500/20',
+  [TaskCategory.PROCUREMENT]: 'bg-orange-500/10 text-orange-500 border-orange-500/20',
   [TaskCategory.MONITORING]: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20',
-  [TaskCategory.OBSTARAVANIE]: 'bg-orange-500/10 text-orange-500 border-orange-500/20',
-  [TaskCategory.PARTNERSTVO]: 'bg-indigo-500/10 text-indigo-500 border-indigo-500/20',
-  [TaskCategory.GENERAL]: 'bg-gray-500/10 text-gray-500 border-gray-500/20',
+  [TaskCategory.EVALUATION]: 'bg-teal-500/10 text-teal-500 border-teal-500/20',
+  [TaskCategory.OTHER]: 'bg-gray-500/10 text-gray-500 border-gray-500/20',
 };
 
 interface TaskCardProps {
@@ -59,8 +60,8 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
   };
   
   // Format deadline date if exists
-  const formattedDeadline = task.deadline 
-    ? format(new Date(task.deadline), 'dd. MM. yyyy', { locale: sk })
+  const formattedDeadline = task.dueDate 
+    ? format(new Date(task.dueDate), 'dd. MM. yyyy', { locale: sk })
     : null;
   
   return (
@@ -74,13 +75,13 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
           <div className="flex justify-between items-start">
             <div className="flex items-center space-x-2">
               <Badge variant="outline" className="text-xs font-mono">
-                {task.externalId || `TASK-${task.id.substring(0, 8)}`}
+                {`TASK-${task.id.substring(0, 8)}`}
               </Badge>
-              <Badge className={`${categoryColors[task.category]}`}>
+              <Badge className={`${categoryColors[task.category] || 'bg-gray-500/10 text-gray-500 border-gray-500/20'}`}>
                 {task.category}
               </Badge>
             </div>
-            <Badge className={`${priorityColors[task.priority]}`}>
+            <Badge className={`${priorityColors[task.priority] || 'bg-gray-500/10 text-gray-500 border-gray-500/20'}`}>
               {task.priority}
             </Badge>
           </div>
@@ -95,16 +96,15 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
             </p>
           )}
           
-          {/* Progress bar */}
-          <div className="space-y-1">
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>Podielohy: {task.progress}%</span>
-              {task.estimatedHours && (
-                <span>{task.actualHours || 0}/{task.estimatedHours} hodín</span>
-              )}
+          {/* Progress bar (if available) */}
+          {task.progress !== undefined && (
+            <div className="space-y-1">
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>Progres: {task.progress}%</span>
+              </div>
+              <Progress value={task.progress} className="h-1" />
             </div>
-            <Progress value={task.progress} className="h-1" />
-          </div>
+          )}
         </div>
       </CardContent>
       
@@ -144,7 +144,7 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
           )}
           
           {/* Status icon */}
-          {statusIcons[task.status]}
+          {statusIcons[task.status] || <Clock className="h-5 w-5 text-gray-500" />}
         </div>
       </CardFooter>
     </Card>

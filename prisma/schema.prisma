@@ -10,213 +10,85 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// User Management
+// User model
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String
-  role      UserRole @default(USER)
-  avatar    String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String    @id @default(uuid())
+  name          String
+  email         String    @unique
+  role          String    @default("TEAM_MEMBER") // ADMIN, PROJECT_MANAGER, TEAM_MEMBER, STAKEHOLDER, GUEST
+  avatar        String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   // Relations
-  assignedTasks Task[]
-  activities    Activity[]
-  comments      Comment[]
-
-  @@map("users")
+  assignedTasks      Task[]
+  activities         Activity[]
+  complianceChecks   ComplianceCheck[]
+  documents          Document[]
 }
 
-enum UserRole {
-  ADMIN
-  PROJECT_MANAGER
-  USER
-  VIEWER
-}
-
-// Task Management
+// Task model
 model Task {
-  id          String     @id @default(cuid())
-  externalId  String?    @unique // TASK-2025-01-0001
+  id          String    @id @default(uuid())
+  externalId  String    @unique // e.g., TASK-2024-07-0001
   title       String
   description String?
-  status      TaskStatus @default(PENDING)
-  priority    Priority   @default(MEDIUM)
-  category    TaskCategory
-  
-  // Dates
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deadline  DateTime?
-  startDate DateTime?
-  
+  status      String    @default("TODO") // TODO, IN_PROGRESS, DONE, BLOCKED, PENDING, COMPLETED, CANCELLED
+  priority    String    @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT, CRITICAL
+  category    String    // GENERAL, REPORTING, FINANCIAL, PROCUREMENT, COMPLIANCE, PUBLICITY, PARTNERSHIP, MONITORING
+  progress    Int       @default(0)
+  deadline    DateTime?
+  assigneeId  String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
   // Relations
-  assigneeId String?
-  assignee   User?   @relation(fields: [assigneeId], references: [id])
-  
-  // Task hierarchy
-  parentId String?
-  parent   Task?   @relation("TaskHierarchy", fields: [parentId], references: [id])
-  subtasks Task[]  @relation("TaskHierarchy")
-  
-  // Additional data
-  progress    Int      @default(0) // 0-100
-  estimatedHours Int?
-  actualHours    Int?
-  
-  // Relations
-  activities Activity[]
-  comments   Comment[]
-  documents  Document[]
-  compliance ComplianceCheck[]
-
-  @@map("tasks")
+  assignee    User?     @relation(fields: [assigneeId], references: [id])
+  activities  Activity[]
 }
 
-enum TaskStatus {
-  PENDING
-  IN_PROGRESS
-  BLOCKED
-  COMPLETED
-  CANCELLED
-}
-
-enum Priority {
-  LOW
-  MEDIUM
-  HIGH
-  CRITICAL
-}
-
-enum TaskCategory {
-  PUBLICITA
-  FINANCIE
-  REPORTING
-  COMPLIANCE
-  MONITORING
-  OBSTARAVANIE
-  PARTNERSTVO
-  GENERAL
-}
-
-// Activity Tracking
+// Activity model
 model Activity {
-  id          String       @id @default(cuid())
-  type        ActivityType
+  id          String    @id @default(uuid())
+  type        String    // TASK_CREATED, TASK_UPDATED, TASK_COMPLETED, TASK_ASSIGNED, COMMENT_ADDED, DOCUMENT_UPLOADED, COMPLIANCE_CHECK, STATUS_CHANGED
   description String
-  metadata    Json?        // Additional data as JSON
-  createdAt   DateTime     @default(now())
+  userId      String
+  taskId      String?
+  createdAt   DateTime  @default(now())
 
   // Relations
-  userId String
-  user   User   @relation(fields: [userId], references: [id])
-  
-  taskId String?
-  task   Task?   @relation(fields: [taskId], references: [id])
-
-  @@map("activities")
+  user        User      @relation(fields: [userId], references: [id])
+  task        Task?     @relation(fields: [taskId], references: [id])
 }
 
-enum ActivityType {
-  TASK_CREATED
-  TASK_UPDATED
-  TASK_COMPLETED
-  TASK_ASSIGNED
-  COMMENT_ADDED
-  DOCUMENT_UPLOADED
-  COMPLIANCE_CHECK
-  STATUS_CHANGED
-}
-
-// Comments
-model Comment {
-  id        String   @id @default(cuid())
-  content   String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  userId String
-  user   User   @relation(fields: [userId], references: [id])
-  
-  taskId String
-  task   Task   @relation(fields: [taskId], references: [id])
-
-  @@map("comments")
-}
-
-// Document Management
-model Document {
-  id          String       @id @default(cuid())
-  name        String
-  description String?
-  fileName    String
-  filePath    String
-  fileSize    Int
-  mimeType    String
-  category    DocumentCategory
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-
-  // Relations
-  taskId String?
-  task   Task?   @relation(fields: [taskId], references: [id])
-
-  @@map("documents")
-}
-
-enum DocumentCategory {
-  REPORT
-  CONTRACT
-  INVOICE
-  PRESENTATION
-  IMAGE
-  OTHER
-}
-
-// INTERREG Compliance
+// Compliance Check model
 model ComplianceCheck {
-  id          String            @id @default(cuid())
-  category    ComplianceCategory
-  status      ComplianceStatus
+  id          String    @id @default(uuid())
+  title       String
   description String?
-  details     Json?             // Additional compliance data
-  nextCheck   DateTime?
-  lastCheck   DateTime?
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  type        String    // VISUAL_IDENTITY, SANCTIONS_LIST, GDPR, PROCUREMENT, FINANCIAL, REPORTING
+  status      String    @default("PENDING") // COMPLIANT, NON_COMPLIANT, PENDING
+  dueDate     DateTime?
+  assigneeId  String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   // Relations
-  taskId String?
-  task   Task?   @relation(fields: [taskId], references: [id])
-
-  @@map("compliance_checks")
+  assignee    User?     @relation(fields: [assigneeId], references: [id])
 }
 
-enum ComplianceCategory {
-  VISUAL_IDENTITY
-  SANCTIONS_CHECK
-  GDPR
-  REPORTING
-  FINANCIAL
-}
+// Document model
+model Document {
+  id          String    @id @default(uuid())
+  title       String
+  description String?
+  type        String    // REPORT, FINANCIAL, CONTRACT, PRESENTATION, OTHER
+  url         String
+  uploaderId  String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
-enum ComplianceStatus {
-  COMPLIANT
-  NON_COMPLIANT
-  PENDING_REVIEW
-  NEEDS_ACTION
-}
-
-// Project Settings
-model ProjectSettings {
-  id        String   @id @default(cuid())
-  key       String   @unique
-  value     Json
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("project_settings")
+  // Relations
+  uploader    User      @relation(fields: [uploaderId], references: [id])
 }
 

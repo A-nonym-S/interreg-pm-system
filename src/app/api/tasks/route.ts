@@ -1,17 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { z } from 'zod';
+import { TaskStatus, TaskPriority, TaskCategory } from '@/types';
 
 // Validation schema for task creation
 const taskCreateSchema = z.object({
   title: z.string().min(3).max(255),
   description: z.string().optional(),
-  status: z.enum(['PENDING', 'IN_PROGRESS', 'BLOCKED', 'COMPLETED', 'CANCELLED']).default('PENDING'),
-  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']).default('MEDIUM'),
-  category: z.enum([
-    'PUBLICITA', 'FINANCIE', 'REPORTING', 'COMPLIANCE', 
-    'MONITORING', 'OBSTARAVANIE', 'PARTNERSTVO', 'GENERAL'
-  ]),
+  status: z.enum([
+    TaskStatus.TODO,
+    TaskStatus.IN_PROGRESS,
+    TaskStatus.DONE,
+    TaskStatus.BLOCKED,
+    TaskStatus.PENDING,
+    TaskStatus.COMPLETED,
+    TaskStatus.CANCELLED
+  ]).default(TaskStatus.TODO),
+  priority: z.enum([
+    TaskPriority.LOW,
+    TaskPriority.MEDIUM,
+    TaskPriority.HIGH,
+    TaskPriority.URGENT,
+    TaskPriority.CRITICAL
+  ]).default(TaskPriority.MEDIUM),
+  category: z.enum(Object.values(TaskCategory) as [string, ...string[]]),
   deadline: z.string().optional(),
   assigneeId: z.string().optional(),
 });
@@ -30,10 +42,37 @@ export async function GET(request: NextRequest) {
     // Build filter object
     const filter: any = {};
     
-    if (status) filter.status = status;
-    if (priority) filter.priority = priority;
-    if (category) filter.category = category;
-    if (assigneeId) filter.assigneeId = assigneeId;
+    // Only add filters if they are valid enum values
+    if (status && Object.values(TaskStatus).includes(status as TaskStatus)) {
+      filter.status = status;
+    }
+    
+    if (priority && Object.values(TaskPriority).includes(priority as TaskPriority)) {
+      filter.priority = priority;
+    }
+    
+    if (category && Object.values(TaskCategory).includes(category as TaskCategory)) {
+      filter.category = category;
+    }
+    
+    if (assigneeId) {
+      filter.assigneeId = assigneeId;
+    }
+    
+    // Check if we have users
+    const usersCount = await prisma.user.count();
+    
+    if (usersCount === 0) {
+      // Create mock users first
+      await createMockUsers();
+    }
+    
+    // Create mock tasks if no tasks exist
+    const tasksCount = await prisma.task.count();
+    
+    if (tasksCount === 0) {
+      await createMockTasks();
+    }
     
     const tasks = await prisma.task.findMany({
       where: filter,
@@ -56,7 +95,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error fetching tasks:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch tasks' },
+      { error: 'Failed to fetch tasks', message: (error as Error).message },
       { status: 500 }
     );
   }
@@ -128,9 +167,126 @@ export async function POST(request: NextRequest) {
     }
     
     return NextResponse.json(
-      { error: 'Failed to create task' },
+      { error: 'Failed to create task', message: (error as Error).message },
       { status: 500 }
     );
+  }
+}
+
+// Helper function to create mock users for testing
+async function createMockUsers() {
+  const mockUsers = [
+    {
+      name: 'Mária Nováková',
+      email: 'maria.novakova@example.com',
+      role: 'PROJECT_MANAGER',
+    },
+    {
+      name: 'Ján Horváth',
+      email: 'jan.horvath@example.com',
+      role: 'TEAM_MEMBER',
+    },
+    {
+      name: 'Peter Kováč',
+      email: 'peter.kovac@example.com',
+      role: 'TEAM_MEMBER',
+    },
+    {
+      name: 'Anna Veselá',
+      email: 'anna.vesela@example.com',
+      role: 'STAKEHOLDER',
+    },
+  ];
+
+  for (const user of mockUsers) {
+    await prisma.user.create({
+      data: user,
+    });
+  }
+}
+
+// Helper function to create mock tasks for testing
+async function createMockTasks() {
+  // Get users for assignment
+  const users = await prisma.user.findMany();
+  
+  if (users.length === 0) {
+    console.error('No users found for task assignment');
+    return;
+  }
+  
+  const mockTasks = [
+    {
+      title: 'Mesačný report pre INTERREG+',
+      description: 'Pripraviť a odoslať mesačný report aktivít pre INTERREG+ program.',
+      status: TaskStatus.DONE,
+      priority: TaskPriority.HIGH,
+      category: TaskCategory.REPORTING,
+      deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+      progress: 100,
+      assigneeId: users[0].id, // Assign to first user
+    },
+    {
+      title: 'Kontrola sankčných zoznamov',
+      description: 'Vykonať kontrolu sankčných zoznamov pre všetkých dodávateľov v projekte.',
+      status: TaskStatus.IN_PROGRESS,
+      priority: TaskPriority.MEDIUM,
+      category: TaskCategory.COMPLIANCE,
+      deadline: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 days from now
+      progress: 60,
+      assigneeId: users[1].id, // Assign to second user
+    },
+    {
+      title: 'Príprava verejného obstarávania',
+      description: 'Pripraviť dokumentáciu pre verejné obstarávanie na dodávku IT vybavenia.',
+      status: TaskStatus.TODO,
+      priority: TaskPriority.HIGH,
+      category: TaskCategory.PROCUREMENT,
+      deadline: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 days from now
+      progress: 20,
+      assigneeId: users[2].id, // Assign to third user
+    },
+    {
+      title: 'Finančný audit Q4',
+      description: 'Vykonať interný finančný audit za Q4 2024.',
+      status: TaskStatus.BLOCKED,
+      priority: TaskPriority.CRITICAL,
+      category: TaskCategory.FINANCIAL,
+      deadline: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), // 5 days from now
+      progress: 10,
+      assigneeId: users[3].id, // Assign to fourth user
+    },
+  ];
+
+  for (const task of mockTasks) {
+    const createdTask = await prisma.task.create({
+      data: {
+        ...task,
+        externalId: `TASK-MOCK-${Math.floor(Math.random() * 1000)}`,
+      },
+    });
+    
+    // Create activity for task creation
+    await prisma.activity.create({
+      data: {
+        type: 'TASK_CREATED',
+        description: `Úloha '${createdTask.title}' bola vytvorená`,
+        userId: task.assigneeId,
+        taskId: createdTask.id,
+      },
+    });
+    
+    // Create activity for task completion if task is done
+    if (task.status === TaskStatus.DONE) {
+      await prisma.activity.create({
+        data: {
+          type: 'TASK_COMPLETED',
+          description: `dokončila úlohu '${createdTask.title}'`,
+          userId: task.assigneeId,
+          taskId: createdTask.id,
+        },
+      });
+    }
   }
 }
 
